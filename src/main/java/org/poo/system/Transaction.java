@@ -25,7 +25,7 @@ public class Transaction implements NodeConvertable {
     private String sender;
     private String receiver;
     private int timestamp;
-    private BankingSystem.Currency currency;
+    private Exchange.Currency currency;
     private String description;
 
     public Transaction(String description, int timestamp) {

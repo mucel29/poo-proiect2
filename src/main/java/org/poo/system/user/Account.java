@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.poo.io.StateWriter;
 import org.poo.system.BankingSystem;
+import org.poo.system.Exchange;
 import org.poo.system.exceptions.BankingInputException;
 import org.poo.utils.NodeConvertable;
 
@@ -45,14 +46,16 @@ public class Account implements NodeConvertable {
 
     private String IBAN;
     private String alias = "";
-    private BankingSystem.Currency currency;
+    private Exchange.Currency currency;
     private Type accountType;
+
     private double interest;
     private double funds;
+    private double minBalance = 0;
 
     private final List<Card> cards = new ArrayList<>();
 
-    public Account(String IBAN, BankingSystem.Currency currency, Type accountType) {
+    public Account(String IBAN, Exchange.Currency currency, Type accountType) {
         this.IBAN = IBAN;
         this.currency = currency;
         this.accountType = accountType;

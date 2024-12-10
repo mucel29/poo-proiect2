@@ -4,45 +4,34 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.Setter;
-import org.poo.system.command.Command;
+import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.BankingInputException;
+import org.poo.system.exceptions.ExchangeException;
 import org.poo.system.exceptions.OwnershipException;
 import org.poo.system.exceptions.UserNotFoundException;
+import org.poo.system.exchange.Pair;
 import org.poo.system.user.Account;
+import org.poo.system.user.Card;
 import org.poo.system.user.User;
+import org.poo.utils.Utils;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Getter @Setter
 public class BankingSystem {
 
-    public enum Currency {
-        USD,
-        EUR,
-        RON;
-
-        public static List<String> possibleValues() {
-            return Arrays.stream(Currency.values()).map(Currency::name).toList();
-        }
-
-        public static Currency fromString(String currency) throws BankingInputException {
-            try {
-                return Currency.valueOf(currency.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                throw new BankingInputException("Invalid currency: " + currency);
-            }
-        }
-
-    }
-
 
     private final List<User> users = new ArrayList<>();
     private final List<Command> commands = new ArrayList<>();
-    private final HashMap<String, User> accountMap = new HashMap<>();
     private final List<Transaction> transactions = new ArrayList<>();
+    private final List<Exchange> exchanges = new ArrayList<>();
+
+    private final Map<String, User> accountMap = new HashMap<>();
+    private final Map<String, Double> commerciantSpending = new HashMap<>();
 
     private BankingSystem() {};
 
@@ -61,7 +50,13 @@ public class BankingSystem {
         commands.clear();
         accountMap.clear();
         transactions.clear();
+        commerciantSpending.clear();
+        exchanges.clear();
+
+        Utils.resetRandom();
+
     }
+
 
     public static void init(final File file) throws IOException {
         if (instance == null) {
@@ -77,16 +72,24 @@ public class BankingSystem {
 
         // Read users
         JsonNode usersNode = root.get("users");
-        if (usersNode.isNull()) {
+        if (usersNode == null) {
             throw new BankingInputException("No users found");
         }
         instance.getUsers().addAll(User.readArray(usersNode));
 
-        // Todo: read exchange rates
+        // Read exchange rates
+        JsonNode exchangeNode = root.get("exchangeRates");
+        if (exchangeNode == null) {
+            throw new BankingInputException("No exchange rates found");
+        }
+        // Add exchanges from input
+        instance.getExchanges().addAll(Exchange.readArray(exchangeNode));
+        // Add composed exchanges (through various currencies)
+        Exchange.computeComposedRates(instance.getExchanges());
 
         // Read commands
         JsonNode commandsNode = root.get("commands");
-        if (commandsNode.isNull()) {
+        if (commandsNode == null) {
             throw new BankingInputException("No commands found");
         }
         instance.getCommands().addAll(Command.readArray(commandsNode));
@@ -102,7 +105,7 @@ public class BankingSystem {
 
     public static User getUserByEmail(final String email) throws UserNotFoundException {
         try {
-            return instance.getUsers().stream().filter(user -> user.getEmail().equals(email)).toList().getFirst();
+            return instance.getUsers().parallelStream().filter(user -> user.getEmail().equals(email)).toList().getFirst();
         } catch (NoSuchElementException e) {
             throw new UserNotFoundException("No user found using email: " + email);
         }
@@ -120,6 +123,43 @@ public class BankingSystem {
 
     public static Account getAccount(final String IBAN) throws UserNotFoundException, OwnershipException {
         return getUserByIBAN(IBAN).getAccount(IBAN);
+    }
+
+    public static Card getCard(final String cardNumber) throws OwnershipException {
+        AtomicReference<Card> targetCard = new AtomicReference<>();
+        instance.getUsers().parallelStream().forEach(u -> {
+            u.getAccounts().parallelStream().forEach(account -> {
+                account.getCards().parallelStream().forEach(card -> {
+                    if (card.getCardNumber().equals(cardNumber)) {
+                        targetCard.set(card);
+                    }
+                });
+            });
+        });
+        if (targetCard.get() == null) {
+            throw new OwnershipException("No card found: " + cardNumber);
+        }
+
+        return targetCard.get();
+    }
+
+    public static double getExchangeRate(Exchange.Currency from, Exchange.Currency to) throws ExchangeException {
+        if (from.equals(to)) {
+            return 1.0;
+        }
+        try {
+            return instance.getExchanges().parallelStream().filter(ex -> ex.getFrom().equals(from) && ex.getTo().equals(to)).toList().getFirst().getRate();
+        } catch (NoSuchElementException e) {
+            throw new ExchangeException("No rate found for " + from + " -> " + to);
+        }
+    }
+
+    public static void addCommerciantPayment(final String commerciant, final double payment) {
+        if (!instance.getCommerciantSpending().containsKey(commerciant)) {
+            instance.getCommerciantSpending().put(commerciant, payment);
+            return;
+        }
+        instance.getCommerciantSpending().put(commerciant, instance.getCommerciantSpending().get(commerciant) + payment);
     }
 
 }
