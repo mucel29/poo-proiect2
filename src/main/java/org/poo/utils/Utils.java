@@ -1,6 +1,7 @@
 package org.poo.utils;
 
 import java.util.Random;
+import java.util.regex.Pattern;
 
 public final class Utils {
     private Utils() {
@@ -35,6 +36,15 @@ public final class Utils {
         }
 
         return sb.toString();
+    }
+
+    private static final Pattern IBAN_REGEX = Pattern.compile(
+            RO_STR + "[0-9]{" + RO_STR.length() + "}"
+                    + POO_STR + "[0-9]{" + DIGIT_GENERATION + "}"
+    );
+
+    public static boolean verifyIBAN(final String iban) {
+        return IBAN_REGEX.matcher(iban).matches();
     }
 
     /**

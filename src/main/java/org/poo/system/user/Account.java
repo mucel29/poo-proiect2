@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Getter;
 import lombok.Setter;
 import org.poo.io.StateWriter;
-import org.poo.system.BankingSystem;
 import org.poo.system.Exchange;
 import org.poo.system.exceptions.BankingInputException;
 import org.poo.utils.NodeConvertable;

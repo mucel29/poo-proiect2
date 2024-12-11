@@ -2,7 +2,10 @@ package org.poo.system.command.base;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Getter;
+import org.poo.io.StateWriter;
+import org.poo.system.BankingSystem;
 import org.poo.system.command.*;
 import org.poo.system.exceptions.BankingInputException;
 import org.poo.system.user.Card;
@@ -11,6 +14,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 public interface Command {
 
@@ -81,9 +87,11 @@ public interface Command {
             case DELETE_CARD -> DeleteCardCommand.fromNode(node);
             case SET_MIN_BALANCE -> MinBalanceCommand.fromNode(node);
             case PAY_ONLINE -> PayOnlineCommand.fromNode(node);
+            case SEND_MONEY -> SendMoneyCommand.fromNode(node);
+            case SET_ALIAS -> SetAliasCommand.fromNode(node);
 
             case PRINT_USERS -> new PrintUsersCommand();
-            default -> throw new BankingInputException("Unknown command: " + type);
+            default -> throw new BankingInputException("[" + BankingSystem.TEST_NUMBER + "] Unknown command: " + type);
         };
 
         command.timestamp = node.get("timestamp").asInt();
@@ -118,6 +126,22 @@ public interface Command {
 
         public Base(Type command) {
             this.command = command;
+        }
+
+        protected void output(Consumer<ObjectNode> consumer) {
+            ObjectNode root = StateWriter.getMapper().createObjectNode();
+            root.put("timestamp", timestamp);
+            root.put("command", command.toString());
+            consumer.accept(root.putObject("output"));
+            StateWriter.write(root);
+        }
+
+        protected void outputArray(Consumer<ArrayNode> consumer) {
+            ObjectNode root = StateWriter.getMapper().createObjectNode();
+            root.put("timestamp", timestamp);
+            root.put("command", command.toString());
+            consumer.accept(root.putArray("output"));
+            StateWriter.write(root);
         }
 
     }

@@ -11,6 +11,12 @@ public class Graph <T> {
             edges.put(src, new ArrayList<>());
         }
         edges.get(src).add(new Pair<>(dest, weight));
+
+        // Also add reverse edge
+        if (!edges.containsKey(dest)) {
+            edges.put(dest, new ArrayList<>());
+        }
+        edges.get(dest).add(new Pair<>(src, 1 / weight));
     }
 
     public void removeNode(T node) {

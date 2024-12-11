@@ -34,7 +34,16 @@ public class PayOnlineCommand extends Command.Base {
     @Override
     public void execute() throws OwnershipException, ExchangeException {
         User targetUser = BankingSystem.getUserByEmail(email);
-        Card targetCard = BankingSystem.getCard(cardNumber);
+        Card targetCard;
+        try {
+            targetCard = BankingSystem.getCard(cardNumber);
+        } catch (OwnershipException e) {
+            super.output(output -> {
+                output.put("description", "Card not found");
+                output.put("timestamp", super.timestamp);
+            });
+            throw new OwnershipException(e.getMessage());
+        }
         Account targetAccount = targetCard.getAccount();
 
         if (!targetUser.getAccounts().contains(targetAccount)) {
@@ -51,14 +60,15 @@ public class PayOnlineCommand extends Command.Base {
             throw new OperationException("Balance under minimum");
         }
 
-        double deducted = amount * BankingSystem.getExchangeRate(targetAccount.getCurrency(), currency);
+        double deducted = amount / BankingSystem.getExchangeRate(targetAccount.getCurrency(), currency);
 
         if (targetAccount.getFunds() < deducted) {
-            throw new OperationException("Not enough balance");
+            throw new OperationException("Not enough balance: " + targetAccount.getFunds() + " (wanted to pay " + deducted + " " + targetAccount.getCurrency() + ") [" + amount + " " + currency + "]");
         }
 
         BankingSystem.addCommerciantPayment(commerciant, deducted);
         targetAccount.setFunds(targetAccount.getFunds() - deducted);
+        System.out.println("Paid " + amount + " " + currency + " (" + deducted + " " + targetAccount.getCurrency() + ") to " + commerciant);
 
         // Freeze the one time card
         if (targetCard.getCardType() == Card.Type.ONE_TIME) {

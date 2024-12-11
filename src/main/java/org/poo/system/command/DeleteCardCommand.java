@@ -26,6 +26,7 @@ public class DeleteCardCommand extends Command.Base {
     public void execute() throws OwnershipException{
         Card targetCard = BankingSystem.getCard(cardNumber);
         targetCard.getAccount().getCards().remove(targetCard);
+        System.out.println("Deleted card: " + cardNumber);
     }
 
     public static DeleteCardCommand fromNode(final JsonNode node) throws BankingInputException {

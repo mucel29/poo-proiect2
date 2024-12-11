@@ -32,6 +32,7 @@ public class BankingSystem {
 
     private final Map<String, User> accountMap = new HashMap<>();
     private final Map<String, Double> commerciantSpending = new HashMap<>();
+    private final Map<String, String> aliasMap = new HashMap<>();
 
     private BankingSystem() {};
 
@@ -45,6 +46,8 @@ public class BankingSystem {
         return instance;
     }
 
+    public static int TEST_NUMBER = 0;
+
     private void reset() {
         users.clear();
         commands.clear();
@@ -55,6 +58,7 @@ public class BankingSystem {
 
         Utils.resetRandom();
 
+
     }
 
 
@@ -64,7 +68,7 @@ public class BankingSystem {
         }
 
         instance.reset();
-
+        TEST_NUMBER++;
         String jsonString = Files.readString(file.toPath());
         JsonNode root = new ObjectMapper().readTree(jsonString);
 
@@ -86,6 +90,10 @@ public class BankingSystem {
         instance.getExchanges().addAll(Exchange.readArray(exchangeNode));
         // Add composed exchanges (through various currencies)
         Exchange.computeComposedRates(instance.getExchanges());
+        System.out.println("Composed rates: ");
+        instance.getExchanges().parallelStream().forEach(exchange ->
+            System.out.println(exchange.getFrom() + " -> " + exchange.getTo() + " [" + exchange.getRate() + "]")
+        );
 
         // Read commands
         JsonNode commandsNode = root.get("commands");
@@ -94,12 +102,16 @@ public class BankingSystem {
         }
         instance.getCommands().addAll(Command.readArray(commandsNode));
 
-
     }
 
     public static void run() {
         for (Command command : instance.getCommands()) {
-            command.execute();
+            try {
+                command.execute();
+            } catch (Exception e) {
+                // Todo: do some handling here ig
+                System.err.println("[" + TEST_NUMBER + "] Caught exception: " + e.getMessage());
+            }
         }
     }
 
@@ -160,6 +172,18 @@ public class BankingSystem {
             return;
         }
         instance.getCommerciantSpending().put(commerciant, instance.getCommerciantSpending().get(commerciant) + payment);
+    }
+
+    public static Account getByAlias(final String alias) throws UserNotFoundException, OwnershipException {
+        if (instance.getAliasMap().get(alias) == null) {
+            throw new OwnershipException("There's no account with the alias: " + alias);
+        }
+
+        try {
+            return getAccount(instance.getAliasMap().get(alias));
+        } catch (UserNotFoundException | OwnershipException e) {
+            throw new OwnershipException(e.getMessage() + " [alias: " + alias + "]");
+        }
     }
 
 }

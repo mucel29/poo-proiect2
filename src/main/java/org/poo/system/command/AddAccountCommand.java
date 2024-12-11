@@ -60,7 +60,7 @@ public class AddAccountCommand extends Command.Base {
 
         double interest = 0;
         if (accountType == Account.Type.SAVINGS) {
-            if (node.get("interest") == null) {
+            if (node.get("interestRate") == null) {
                 throw new BankingInputException("Missing interest for savings account\n" + node.toPrettyString());
             }
             interest = node.get("interestRate").asDouble();
