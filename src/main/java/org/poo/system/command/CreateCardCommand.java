@@ -2,6 +2,7 @@ package org.poo.system.command;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.poo.system.BankingSystem;
+import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.BankingInputException;
 import org.poo.system.exceptions.OwnershipException;
@@ -32,7 +33,16 @@ public class CreateCardCommand extends Command.Base {
         }
 
         Account targetAccount = targetUser.getAccount(IBAN);
-        targetAccount.getCards().add(new Card(targetAccount, cardType, Utils.generateCardNumber()));
+        Card newCard = new Card(targetAccount, cardType, Utils.generateCardNumber());
+
+        targetUser.getTransactions().add(
+                new Transaction("New card created", timestamp)
+                        .setCard(newCard.getCardNumber())
+                        .setCardHolder(targetUser.getEmail())
+                        .setAccount(targetAccount.getIBAN())
+        );
+
+        targetAccount.getCards().add(newCard);
     }
 
     public static CreateCardCommand fromNode(final JsonNode node, Card.Type cardType) throws BankingInputException {

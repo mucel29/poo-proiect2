@@ -15,8 +15,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 public interface Command {
 
@@ -90,6 +88,7 @@ public interface Command {
             case SEND_MONEY -> SendMoneyCommand.fromNode(node);
             case SET_ALIAS -> SetAliasCommand.fromNode(node);
 
+            case PRINT_TRANSACTIONS -> PrintTransactionsCommand.fromNode(node);
             case PRINT_USERS -> new PrintUsersCommand();
             default -> throw new BankingInputException("[" + BankingSystem.TEST_NUMBER + "] Unknown command: " + type);
         };

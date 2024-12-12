@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Getter;
 import lombok.Setter;
 import org.poo.io.StateWriter;
+import org.poo.system.Transaction;
 import org.poo.system.exceptions.BankingInputException;
 import org.poo.system.exceptions.OwnershipException;
 import org.poo.utils.NodeConvertable;
@@ -24,6 +25,7 @@ public class User implements NodeConvertable {
     private String email;
 
     private final List<Account> accounts = new ArrayList<>();
+    private final List<Transaction> transactions = new ArrayList<>();
 
     public User(String firstName, String lastName, String email) {
         this.firstName = firstName;

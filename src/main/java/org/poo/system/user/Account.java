@@ -43,6 +43,8 @@ public class Account implements NodeConvertable {
     }
 
 
+    private User owner;
+
     private String IBAN;
     private String alias = "";
     private Exchange.Currency currency;
@@ -54,7 +56,8 @@ public class Account implements NodeConvertable {
 
     private final List<Card> cards = new ArrayList<>();
 
-    public Account(String IBAN, Exchange.Currency currency, Type accountType) {
+    public Account(User owner, String IBAN, Exchange.Currency currency, Type accountType) {
+        this.owner = owner;
         this.IBAN = IBAN;
         this.currency = currency;
         this.accountType = accountType;

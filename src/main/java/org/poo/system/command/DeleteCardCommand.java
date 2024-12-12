@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.poo.io.StateWriter;
 import org.poo.system.BankingSystem;
+import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.BankingInputException;
 import org.poo.system.exceptions.OperationException;
@@ -23,8 +24,20 @@ public class DeleteCardCommand extends Command.Base {
     }
 
     @Override
-    public void execute() throws OwnershipException{
+    public void execute() throws OwnershipException {
         Card targetCard = BankingSystem.getCard(cardNumber);
+        targetCard.getAccount().getOwner().getTransactions().add(
+                new Transaction("The card has been destroyed", timestamp)
+                        .setCardHolder(targetCard
+                                .getAccount()
+                                .getOwner()
+                                .getEmail()
+                        ).setCard(targetCard.getCardNumber())
+                        .setAccount(targetCard
+                                .getAccount()
+                                .getIBAN()
+                        )
+        );
         targetCard.getAccount().getCards().remove(targetCard);
         System.out.println("Deleted card: " + cardNumber);
     }

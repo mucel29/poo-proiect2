@@ -24,14 +24,14 @@ public class DeleteAccountCommand extends Command.Base {
     }
 
     private void export(final boolean success) {
-        ObjectNode root = StateWriter.getMapper().createObjectNode();
-        root.put("command", command.toString());
-        ObjectNode output = root.putObject("output");
-        output.put("success", success ? "Account deleted" : "??????");
-        output.put("timestamp", timestamp);
-        root.put("timestamp", timestamp);
-
-        StateWriter.write(root);
+        super.output(obj -> {
+            if (success) {
+                obj.put("success", "Account deleted");
+            } else {
+                obj.put("error", "Account couldn't be deleted - see org.poo.transactions for details");
+            }
+            obj.put("timestamp", timestamp);
+        });
     }
 
     @Override

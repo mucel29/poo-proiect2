@@ -3,15 +3,22 @@ package org.poo.system;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 import org.poo.io.StateWriter;
 import org.poo.utils.NodeConvertable;
 
-@Getter @Setter
-public class Transaction implements NodeConvertable {
+import java.lang.reflect.Field;
+
+@Getter
+@Setter
+@Accessors(chain = true)
+public class Transaction implements NodeConvertable, Cloneable {
 
     public enum Type {
-        SEND,
-        RECEIVE,
+        SENT,
+        RECEIVED,
+        PAYMENT,
+        OPERATION,
         UNKNOWN;
 
         @Override
@@ -20,34 +27,95 @@ public class Transaction implements NodeConvertable {
         }
     }
 
-    private Type transactionType;
-    private double amount;
-    private String sender;
-    private String receiver;
-    private int timestamp;
-    private Exchange.Currency currency;
+
+    // Common
+    private Type transferType;
+    private Integer timestamp;
     private String description;
+
+    // Card creation
+    private String account;
+    private String cardHolder;
+    private String card;
+
+    // Payment / transfer
+    private Double amount;
+
+    // Transfer
+    private String senderIBAN;
+    private String receiverIBAN;
+    private Exchange.Currency currency;
+
+    // Payment
+    private String commerciant;
 
     public Transaction(String description, int timestamp) {
         this.description = description;
         this.timestamp = timestamp;
-        this.transactionType = Type.UNKNOWN;
+        this.transferType = Type.UNKNOWN;
     }
 
 
     @Override
     public ObjectNode toNode() {
         ObjectNode root = StateWriter.getMapper().createObjectNode();
-        root.put("description", description);
-        root.put("timestamp", timestamp);
+        try {
+            for (Field field : this.getClass().getDeclaredFields()) {
+                if (field.get(this) == null) {
+                    continue;
+                }
 
-        if (transactionType != Type.UNKNOWN) {
-            root.put("transferType", transactionType.toString());
-            root.put("amount", amount + " " + currency);
-            root.put("senderIBAN", sender);
-            root.put("receiverIBAN", receiver);
+                // Ignore currency, it's added to the amount
+                if (field.equals(Transaction.class.getDeclaredField("currency"))) {
+                    continue;
+                }
+
+                // No need to print the transactionType if it's not sent / received
+                if (field.equals(Transaction.class.getDeclaredField("transferType"))
+
+                ) {
+                    if (this.transferType == Transaction.Type.SENT || this.transferType == Transaction.Type.RECEIVED) {
+                        root.put(field.getName(), field.get(this).toString());
+                    }
+                    continue;
+                }
+
+                if (field.equals(Transaction.class.getDeclaredField("amount"))) {
+                    if (this.transferType == Transaction.Type.SENT
+                            || this.transferType == Transaction.Type.RECEIVED
+                    ) {
+                        root.put(field.getName(), (Double) field.get(this) + " " + this.currency);
+                        continue;
+                    }
+
+                }
+
+                if (field.getType().isAssignableFrom(String.class)) {
+                    root.put(field.getName(), (String) field.get(this));
+                } else if (field.getType().isAssignableFrom(Double.class)) {
+                    root.put(field.getName(), (Double) field.get(this));
+                } else if (field.getType().isAssignableFrom(Integer.class)) {
+                    root.put(field.getName(), (Integer) field.get(this));
+                } else {
+                    throw new RuntimeException("Could not match type of field `" + field.getName() + "` [" + field.getName() + "]");
+                }
+
+
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
         }
 
         return root;
+    }
+
+    @Override
+    public Transaction clone() {
+        try {
+            return (Transaction) super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
+        }
     }
 }

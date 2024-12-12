@@ -3,6 +3,7 @@ package org.poo.system.command;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.poo.system.BankingSystem;
 import org.poo.system.Exchange;
+import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.BankingInputException;
 import org.poo.system.exceptions.UserNotFoundException;
@@ -36,7 +37,7 @@ public class AddAccountCommand extends Command.Base {
 
         // We know the currency is supported, otherwise there would've been an Exception already
 
-        Account newAccount = new Account(Utils.generateIBAN(), this.currency, this.accountType);
+        Account newAccount = new Account(targetUser, Utils.generateIBAN(), this.currency, this.accountType);
         if (this.accountType == Account.Type.SAVINGS) {
             newAccount.setInterest(this.interest);
         }
@@ -44,6 +45,7 @@ public class AddAccountCommand extends Command.Base {
         // Add the new account into the map and to the user
         BankingSystem.getInstance().getAccountMap().put(newAccount.getIBAN(), targetUser);
         targetUser.getAccounts().add(newAccount);
+        targetUser.getTransactions().add(new Transaction("New account created", timestamp));
     }
 
     public static AddAccountCommand fromNode(JsonNode node) throws BankingInputException {

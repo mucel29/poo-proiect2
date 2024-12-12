@@ -2,6 +2,7 @@ package org.poo.system.command;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.poo.system.BankingSystem;
+import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.BankingInputException;
 import org.poo.system.exceptions.OperationException;
@@ -29,9 +30,11 @@ public class SendMoneyCommand extends Command.Base {
     public void execute() throws OwnershipException, OperationException {
         // Todo: implement alias matching, Transactions
         // TODO: Add reverse exchange: if we have EUR -> USD, we should also have USD -> EUR
-        Account senderAccount = Utils.verifyIBAN(sender)
-                ? BankingSystem.getAccount(sender)
-                : BankingSystem.getByAlias(sender);
+        if (!Utils.verifyIBAN(sender)) {
+            throw new OperationException("Invalid sender IBAN [can't use an user as alias]");
+        }
+
+        Account senderAccount = BankingSystem.getAccount(sender);
         Account receiverAccount = Utils.verifyIBAN(receiver)
                 ? BankingSystem.getAccount(receiver)
                 : BankingSystem.getByAlias(receiver);
@@ -42,10 +45,26 @@ public class SendMoneyCommand extends Command.Base {
             throw new OperationException("Not enough balance: " + senderAccount.getFunds() + " (wanted to send " + amount + " " + senderAccount.getCurrency() + ") [" + convertedAmount + " " + receiverAccount.getCurrency() + "]");
         }
 
-        senderAccount.setFunds(senderAccount.getFunds() - amount);
-        receiverAccount.setFunds(receiverAccount.getFunds() + convertedAmount);
+        Transaction transaction = new Transaction(description, timestamp)
+                .setDescription(description)
+                .setSenderIBAN(senderAccount.getIBAN())
+                .setReceiverIBAN(receiverAccount.getIBAN())
+                .setAmount(amount)
+                .setCurrency(senderAccount.getCurrency())
+                .setTransferType(Transaction.Type.SENT);
 
-        System.out.println("Sent " + amount + " " + senderAccount.getCurrency() + " (" + convertedAmount + " " + receiverAccount.getCurrency() + ") to " + receiverAccount.getIBAN());
+        senderAccount.setFunds(senderAccount.getFunds() - amount);
+        senderAccount.getOwner().getTransactions().add(transaction);
+
+        receiverAccount.setFunds(receiverAccount.getFunds() + convertedAmount);
+        receiverAccount.getOwner().getTransactions().add(
+                transaction.clone()
+                        .setCurrency(receiverAccount.getCurrency())
+                        .setAmount(convertedAmount)
+                        .setTransferType(Transaction.Type.RECEIVED)
+        );
+
+        System.out.println("Sent " + amount + " " + senderAccount.getCurrency() + " (" + convertedAmount + " " + receiverAccount.getCurrency() + ") to " + receiverAccount.getIBAN() + (Utils.verifyIBAN(receiver) ? "" : " [" + receiver + "]"));
 
     }
 

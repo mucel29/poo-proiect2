@@ -23,11 +23,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @Getter @Setter
 public class BankingSystem {
-
+    // TODO: some users don't get added to the users list! (perhaps it's from the multithreading)
 
     private final List<User> users = new ArrayList<>();
     private final List<Command> commands = new ArrayList<>();
-    private final List<Transaction> transactions = new ArrayList<>();
     private final List<Exchange> exchanges = new ArrayList<>();
 
     private final Map<String, User> accountMap = new HashMap<>();
@@ -52,7 +51,6 @@ public class BankingSystem {
         users.clear();
         commands.clear();
         accountMap.clear();
-        transactions.clear();
         commerciantSpending.clear();
         exchanges.clear();
 

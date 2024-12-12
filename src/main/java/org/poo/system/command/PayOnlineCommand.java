@@ -3,6 +3,7 @@ package org.poo.system.command;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.poo.system.BankingSystem;
 import org.poo.system.Exchange;
+import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.BankingInputException;
 import org.poo.system.exceptions.ExchangeException;
@@ -63,12 +64,21 @@ public class PayOnlineCommand extends Command.Base {
         double deducted = amount / BankingSystem.getExchangeRate(targetAccount.getCurrency(), currency);
 
         if (targetAccount.getFunds() < deducted) {
+            targetUser.getTransactions().add(
+                    new Transaction("Insufficient funds", timestamp)
+            );
             throw new OperationException("Not enough balance: " + targetAccount.getFunds() + " (wanted to pay " + deducted + " " + targetAccount.getCurrency() + ") [" + amount + " " + currency + "]");
         }
 
         BankingSystem.addCommerciantPayment(commerciant, deducted);
         targetAccount.setFunds(targetAccount.getFunds() - deducted);
         System.out.println("Paid " + amount + " " + currency + " (" + deducted + " " + targetAccount.getCurrency() + ") to " + commerciant);
+
+        targetUser.getTransactions().add(
+                new Transaction("Card payment", timestamp)
+                        .setCommerciant(commerciant)
+                        .setAmount(deducted)
+        );
 
         // Freeze the one time card
         if (targetCard.getCardType() == Card.Type.ONE_TIME) {

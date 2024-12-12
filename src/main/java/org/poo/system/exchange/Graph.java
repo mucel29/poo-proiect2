@@ -41,7 +41,8 @@ public class Graph <T> {
 
         while (!queue.isEmpty()) {
             // Remove node from the queue
-            Pair<T, Double> pair = queue.remove();
+            Pair<T, Double> pair = queue.poll();
+            if (pair == null) break;
 
             // If the node was already visited, we skip it
             if (visited.contains(pair.getFirst())) {
