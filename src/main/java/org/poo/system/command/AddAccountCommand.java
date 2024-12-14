@@ -2,7 +2,7 @@ package org.poo.system.command;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.poo.system.BankingSystem;
-import org.poo.system.Exchange;
+import org.poo.system.exchange.Exchange;
 import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.BankingInputException;
@@ -14,11 +14,11 @@ import org.poo.utils.Utils;
 public class AddAccountCommand extends Command.Base {
 
     private String email;
-    private Exchange.Currency currency;
+    private String currency;
     private Account.Type accountType;
     private double interest;
 
-    public AddAccountCommand(String email, Exchange.Currency currency, Account.Type accountType, double interest) {
+    public AddAccountCommand(String email, String currency, Account.Type accountType, double interest) {
         super(Command.Type.ADD_ACCOUNT);
         this.email = email;
         this.currency = currency;
@@ -45,13 +45,20 @@ public class AddAccountCommand extends Command.Base {
         // Add the new account into the map and to the user
         BankingSystem.getInstance().getAccountMap().put(newAccount.getIBAN(), targetUser);
         targetUser.getAccounts().add(newAccount);
-        targetUser.getTransactions().add(new Transaction("New account created", timestamp));
+        targetUser.getTransactions().add(new Transaction.Base("New account created", timestamp));
     }
 
     public static AddAccountCommand fromNode(JsonNode node) throws BankingInputException {
 
         String email = node.get("email").asText();
-        Exchange.Currency currency = Exchange.Currency.fromString(node.get("currency").asText());
+
+        // TODO: verify that the currency is registered [verifyCurrency that returns String ig]
+
+        // Can't verify currency here, first tests don't have exchange rates to register them
+        String currency = node.get("currency").asText();
+
+        // Just add it ig
+        Exchange.registerCurrency(currency);
 
         // This will throw an exception if it's empty anyway
         Account.Type accountType = Account.Type.fromString(node.get("accountType").asText());

@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Getter;
 import lombok.Setter;
 import org.poo.io.StateWriter;
-import org.poo.system.Exchange;
 import org.poo.system.exceptions.BankingInputException;
 import org.poo.utils.NodeConvertable;
 
@@ -47,7 +46,7 @@ public class Account implements NodeConvertable {
 
     private String IBAN;
     private String alias = "";
-    private Exchange.Currency currency;
+    private String currency;
     private Type accountType;
 
     private double interest;
@@ -56,7 +55,7 @@ public class Account implements NodeConvertable {
 
     private final List<Card> cards = new ArrayList<>();
 
-    public Account(User owner, String IBAN, Exchange.Currency currency, Type accountType) {
+    public Account(User owner, String IBAN, String currency, Type accountType) {
         this.owner = owner;
         this.IBAN = IBAN;
         this.currency = currency;
@@ -68,7 +67,7 @@ public class Account implements NodeConvertable {
     public ObjectNode toNode() {
         ObjectNode root = StateWriter.getMapper().createObjectNode();
         root.put("IBAN", IBAN);
-        root.put("currency", currency.name());
+        root.put("currency", currency);
         root.put("type", accountType.toString());
         root.put("balance", funds);
 

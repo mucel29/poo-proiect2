@@ -36,7 +36,7 @@ public class CreateCardCommand extends Command.Base {
         Card newCard = new Card(targetAccount, cardType, Utils.generateCardNumber());
 
         targetUser.getTransactions().add(
-                new Transaction("New card created", timestamp)
+                new Transaction.CardOperation("New card created", timestamp)
                         .setCard(newCard.getCardNumber())
                         .setCardHolder(targetUser.getEmail())
                         .setAccount(targetAccount.getIBAN())

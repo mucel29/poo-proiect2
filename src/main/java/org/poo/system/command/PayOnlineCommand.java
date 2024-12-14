@@ -2,7 +2,7 @@ package org.poo.system.command;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.poo.system.BankingSystem;
-import org.poo.system.Exchange;
+import org.poo.system.exchange.Exchange;
 import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.BankingInputException;
@@ -18,11 +18,11 @@ public class PayOnlineCommand extends Command.Base {
     private final String email;
     private final String cardNumber;
     private final double amount;
-    private final Exchange.Currency currency;
+    private final String currency;
     private final String description;
     private final String commerciant;
 
-    public PayOnlineCommand(String email, String cardNumber, double amount, Exchange.Currency currency, String description, String commerciant) {
+    public PayOnlineCommand(String email, String cardNumber, double amount, String currency, String description, String commerciant) {
         super(Command.Type.PAY_ONLINE);
         this.email = email;
         this.cardNumber = cardNumber;
@@ -61,11 +61,11 @@ public class PayOnlineCommand extends Command.Base {
             throw new OperationException("Balance under minimum");
         }
 
-        double deducted = amount / BankingSystem.getExchangeRate(targetAccount.getCurrency(), currency);
+        double deducted = amount / Exchange.getRate(targetAccount.getCurrency(), currency);
 
         if (targetAccount.getFunds() < deducted) {
             targetUser.getTransactions().add(
-                    new Transaction("Insufficient funds", timestamp)
+                    new Transaction.Base("Insufficient funds", timestamp)
             );
             throw new OperationException("Not enough balance: " + targetAccount.getFunds() + " (wanted to pay " + deducted + " " + targetAccount.getCurrency() + ") [" + amount + " " + currency + "]");
         }
@@ -75,7 +75,7 @@ public class PayOnlineCommand extends Command.Base {
         System.out.println("Paid " + amount + " " + currency + " (" + deducted + " " + targetAccount.getCurrency() + ") to " + commerciant);
 
         targetUser.getTransactions().add(
-                new Transaction("Card payment", timestamp)
+                new Transaction.Payment("Card payment", timestamp)
                         .setCommerciant(commerciant)
                         .setAmount(deducted)
         );
@@ -94,7 +94,7 @@ public class PayOnlineCommand extends Command.Base {
         String description = node.get("description").asText();
         String commerciant = node.get("commerciant").asText();
 
-        Exchange.Currency currency = Exchange.Currency.fromString(node.get("currency").asText());
+        String currency = Exchange.verifyCurrency(node.get("currency").asText());
 
         if (cardNumber.isEmpty() || amount < 0 || description.isEmpty() || commerciant.isEmpty()) {
             throw new BankingInputException("Missing arguments for PayOnline\n" + node.toPrettyString());

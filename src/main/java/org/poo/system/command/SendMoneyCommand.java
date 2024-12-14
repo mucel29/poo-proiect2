@@ -7,6 +7,7 @@ import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.BankingInputException;
 import org.poo.system.exceptions.OperationException;
 import org.poo.system.exceptions.OwnershipException;
+import org.poo.system.exchange.Exchange;
 import org.poo.system.user.Account;
 import org.poo.utils.Utils;
 
@@ -39,29 +40,28 @@ public class SendMoneyCommand extends Command.Base {
                 ? BankingSystem.getAccount(receiver)
                 : BankingSystem.getByAlias(receiver);
 
-        double convertedAmount = amount * BankingSystem.getExchangeRate(senderAccount.getCurrency(), receiverAccount.getCurrency());
+        double convertedAmount = amount * Exchange.getRate(senderAccount.getCurrency(), receiverAccount.getCurrency());
 
         if (senderAccount.getFunds() < amount) {
             throw new OperationException("Not enough balance: " + senderAccount.getFunds() + " (wanted to send " + amount + " " + senderAccount.getCurrency() + ") [" + convertedAmount + " " + receiverAccount.getCurrency() + "]");
         }
 
-        Transaction transaction = new Transaction(description, timestamp)
-                .setDescription(description)
+        Transaction.Transfer transaction = new Transaction.Transfer(description, timestamp)
                 .setSenderIBAN(senderAccount.getIBAN())
                 .setReceiverIBAN(receiverAccount.getIBAN())
                 .setAmount(amount)
                 .setCurrency(senderAccount.getCurrency())
-                .setTransferType(Transaction.Type.SENT);
+                .setTransferType(Transaction.TransferType.SENT);
 
         senderAccount.setFunds(senderAccount.getFunds() - amount);
-        senderAccount.getOwner().getTransactions().add(transaction);
+        senderAccount.getOwner().getTransactions().add(transaction.clone());
 
         receiverAccount.setFunds(receiverAccount.getFunds() + convertedAmount);
         receiverAccount.getOwner().getTransactions().add(
-                transaction.clone()
+                transaction
                         .setCurrency(receiverAccount.getCurrency())
                         .setAmount(convertedAmount)
-                        .setTransferType(Transaction.Type.RECEIVED)
+                        .setTransferType(Transaction.TransferType.RECEIVED)
         );
 
         System.out.println("Sent " + amount + " " + senderAccount.getCurrency() + " (" + convertedAmount + " " + receiverAccount.getCurrency() + ") to " + receiverAccount.getIBAN() + (Utils.verifyIBAN(receiver) ? "" : " [" + receiver + "]"));

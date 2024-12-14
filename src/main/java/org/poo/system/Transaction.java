@@ -1,121 +1,122 @@
 package org.poo.system;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.poo.io.StateWriter;
 import org.poo.utils.NodeConvertable;
+import org.poo.utils.ReflectionUtils;
 
 import java.lang.reflect.Field;
 
-@Getter
-@Setter
-@Accessors(chain = true)
-public class Transaction implements NodeConvertable, Cloneable {
-
-    public enum Type {
+public interface Transaction extends NodeConvertable, Cloneable {
+    enum TransferType {
         SENT,
-        RECEIVED,
-        PAYMENT,
-        OPERATION,
-        UNKNOWN;
+        RECEIVED;
 
         @Override
         public String toString() {
             return name().toLowerCase();
         }
+
     }
 
+    Transaction clone();
 
-    // Common
-    private Type transferType;
-    private Integer timestamp;
-    private String description;
+    class Base implements Transaction {
+        private final String description;
+        private final int timestamp;
 
-    // Card creation
-    private String account;
-    private String cardHolder;
-    private String card;
-
-    // Payment / transfer
-    private Double amount;
-
-    // Transfer
-    private String senderIBAN;
-    private String receiverIBAN;
-    private Exchange.Currency currency;
-
-    // Payment
-    private String commerciant;
-
-    public Transaction(String description, int timestamp) {
-        this.description = description;
-        this.timestamp = timestamp;
-        this.transferType = Type.UNKNOWN;
-    }
+        public Base(String description, int timestamp) {
+            this.description = description;
+            this.timestamp = timestamp;
+        }
 
 
-    @Override
-    public ObjectNode toNode() {
-        ObjectNode root = StateWriter.getMapper().createObjectNode();
-        try {
-            for (Field field : this.getClass().getDeclaredFields()) {
-                if (field.get(this) == null) {
-                    continue;
-                }
+        @Override
+        public ObjectNode toNode() {
+            ObjectNode root = StateWriter.getMapper().createObjectNode();
 
-                // Ignore currency, it's added to the amount
-                if (field.equals(Transaction.class.getDeclaredField("currency"))) {
-                    continue;
-                }
-
-                // No need to print the transactionType if it's not sent / received
-                if (field.equals(Transaction.class.getDeclaredField("transferType"))
-
-                ) {
-                    if (this.transferType == Transaction.Type.SENT || this.transferType == Transaction.Type.RECEIVED) {
-                        root.put(field.getName(), field.get(this).toString());
-                    }
-                    continue;
-                }
-
-                if (field.equals(Transaction.class.getDeclaredField("amount"))) {
-                    if (this.transferType == Transaction.Type.SENT
-                            || this.transferType == Transaction.Type.RECEIVED
-                    ) {
-                        root.put(field.getName(), (Double) field.get(this) + " " + this.currency);
-                        continue;
-                    }
-
-                }
-
-                if (field.getType().isAssignableFrom(String.class)) {
-                    root.put(field.getName(), (String) field.get(this));
-                } else if (field.getType().isAssignableFrom(Double.class)) {
-                    root.put(field.getName(), (Double) field.get(this));
-                } else if (field.getType().isAssignableFrom(Integer.class)) {
-                    root.put(field.getName(), (Integer) field.get(this));
-                } else {
-                    throw new RuntimeException("Could not match type of field `" + field.getName() + "` [" + field.getName() + "]");
-                }
-
-
+            // (won't work if the transaction doesn't directly extend Base)
+            // Set super(base) class fields first
+            for (Field superField : Base.class.getDeclaredFields()) {
+                ReflectionUtils.addField(root, superField, this);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
+            // Set instance class fields
+            for (Field instanceField : this.getClass().getDeclaredFields()) {
+                ReflectionUtils.addField(root, instanceField, this);
+            }
+
+            return root;
         }
 
-        return root;
+
+        @Override
+        public Transaction clone() {
+            Transaction to = null;
+            try {
+                to = this.getClass().getConstructor(String.class, int.class).newInstance(this.description, this.timestamp);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
+            // Clone superclass fields
+            ReflectionUtils.copyFields(this.getClass().getSuperclass().getDeclaredFields(), to.getClass().getSuperclass().getDeclaredFields(), this, to);
+
+            // Copy instance fields
+            ReflectionUtils.copyFields(this.getClass().getDeclaredFields(), to.getClass().getDeclaredFields(), this, to);
+
+            return to;
+        }
+
     }
 
-    @Override
-    public Transaction clone() {
-        try {
-            return (Transaction) super.clone();
-        } catch (CloneNotSupportedException e) {
-            throw new AssertionError();
+    @Setter @Accessors(chain = true)
+    class Transfer extends Base {
+        private String senderIBAN;
+        private String receiverIBAN;
+        private String currency;
+        private TransferType transferType;
+
+        private double amount;
+
+        public Transfer(String description, int timestamp) {
+            super(description, timestamp);
         }
+
+        // Need to change the amount field generated by `Base`
+        // Also remove the currency field, it's included in the amount now
+        @Override
+        public ObjectNode toNode() {
+            ObjectNode root = super.toNode();
+            root.put("amount", amount + " " + currency);
+            root.remove("currency");
+            return root;
+        }
+
     }
+    @Setter @Accessors(chain = true)
+    class Payment extends Base {
+        private String commerciant;
+        private double amount;
+
+        public Payment(String description, int timestamp) {
+            super(description, timestamp);
+        }
+
+    }
+
+    @Setter @Accessors(chain = true)
+    class CardOperation extends Base {
+        private String account;
+        private String cardHolder;
+        private String card;
+        
+        public CardOperation(String description, int timestamp) {
+            super(description, timestamp);
+        }
+
+    }
+
 }
+

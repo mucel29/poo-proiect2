@@ -6,10 +6,9 @@ import lombok.Getter;
 import lombok.Setter;
 import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.BankingInputException;
-import org.poo.system.exceptions.ExchangeException;
 import org.poo.system.exceptions.OwnershipException;
 import org.poo.system.exceptions.UserNotFoundException;
-import org.poo.system.exchange.Pair;
+import org.poo.system.exchange.Exchange;
 import org.poo.system.user.Account;
 import org.poo.system.user.Card;
 import org.poo.system.user.User;
@@ -27,7 +26,6 @@ public class BankingSystem {
 
     private final List<User> users = new ArrayList<>();
     private final List<Command> commands = new ArrayList<>();
-    private final List<Exchange> exchanges = new ArrayList<>();
 
     private final Map<String, User> accountMap = new HashMap<>();
     private final Map<String, Double> commerciantSpending = new HashMap<>();
@@ -52,7 +50,7 @@ public class BankingSystem {
         commands.clear();
         accountMap.clear();
         commerciantSpending.clear();
-        exchanges.clear();
+        Exchange.reset();
 
         Utils.resetRandom();
 
@@ -85,13 +83,10 @@ public class BankingSystem {
             throw new BankingInputException("No exchange rates found");
         }
         // Add exchanges from input
-        instance.getExchanges().addAll(Exchange.readArray(exchangeNode));
-        // Add composed exchanges (through various currencies)
-        Exchange.computeComposedRates(instance.getExchanges());
-        System.out.println("Composed rates: ");
-        instance.getExchanges().parallelStream().forEach(exchange ->
-            System.out.println(exchange.getFrom() + " -> " + exchange.getTo() + " [" + exchange.getRate() + "]")
-        );
+        Exchange.registerExchanges(exchangeNode);
+        Exchange.printRates();
+
+
 
         // Read commands
         JsonNode commandsNode = root.get("commands");
@@ -151,17 +146,6 @@ public class BankingSystem {
         }
 
         return targetCard.get();
-    }
-
-    public static double getExchangeRate(Exchange.Currency from, Exchange.Currency to) throws ExchangeException {
-        if (from.equals(to)) {
-            return 1.0;
-        }
-        try {
-            return instance.getExchanges().parallelStream().filter(ex -> ex.getFrom().equals(from) && ex.getTo().equals(to)).toList().getFirst().getRate();
-        } catch (NoSuchElementException e) {
-            throw new ExchangeException("No rate found for " + from + " -> " + to);
-        }
     }
 
     public static void addCommerciantPayment(final String commerciant, final double payment) {
