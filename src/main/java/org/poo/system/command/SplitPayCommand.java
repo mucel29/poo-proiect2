@@ -1,6 +1,7 @@
 package org.poo.system.command;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.poo.io.IOUtils;
 import org.poo.system.BankingSystem;
 import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
@@ -73,11 +74,8 @@ public class SplitPayCommand extends Command.Base {
         if (accountsNode == null || !accountsNode.isArray()) {
             throw new BankingInputException("accounts must be an array");
         }
-        double amount = node.get("amount").asDouble(-1);
-        String currency = node.get("currency").asText();
-        if (currency.isEmpty() || amount < 0) {
-            throw new BankingInputException("Missing arguments for SplitPay\n" + node.toPrettyString());
-        }
+        double amount = IOUtils.readDoubleChecked(node, "amount");
+        String currency = IOUtils.readStringChecked(node, "currency");
 
         List<String> accounts = new ArrayList<>();
         for (JsonNode account : accountsNode) {

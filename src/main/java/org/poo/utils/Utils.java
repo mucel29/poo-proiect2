@@ -43,6 +43,11 @@ public final class Utils {
                     + POO_STR + "[0-9]{" + DIGIT_GENERATION + "}"
     );
 
+    /**
+     * Utility method for verifying if a string is a valid IBAN
+     * @param iban the string to check
+     * @return whether the string is an IBAN or not
+     */
     public static boolean verifyIBAN(final String iban) {
         return IBAN_REGEX.matcher(iban).matches();
     }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Getter;
+import org.poo.io.IOUtils;
 import org.poo.io.StateWriter;
 import org.poo.system.BankingSystem;
 import org.poo.system.command.*;
@@ -15,37 +16,90 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 public interface Command {
 
     void execute();
 
     enum Type {
-        ADD_ACCOUNT("addAccount"),
-        CREATE_CARD("createCard"),
-        CREATE_ONE_TIME_CARD("createOneTimeCard"),
-        ADD_FUNDS("addFunds"),
-        DELETE_ACCOUNT("deleteAccount"),
-        DELETE_CARD("deleteCard"),
-        SET_MIN_BALANCE("setMinimumBalance"),
-        CHECK_CARD_STATUS("checkCardStatus"),
-        PAY_ONLINE("payOnline"),
-        SEND_MONEY("sendMoney"),
-        SET_ALIAS("setAlias"),
-        SPLIT_PAYMENT("splitPayment"),
-        ADD_INTEREST("addInterest"),
-        CHANGE_INTEREST_RATE("changeInterestRate"),
-        REPORT("report"),
-        SPENDINGS_REPORT("spendingsReport"),
+        ADD_ACCOUNT(
+                "addAccount",
+                AddAccountCommand::fromNode
+        ),
+        CREATE_CARD(
+                "createCard",
+                node -> CreateCardCommand.fromNode(node, Card.Type.CLASSIC)
+        ),
+        CREATE_ONE_TIME_CARD(
+                "createOneTimeCard",
+                node -> CreateCardCommand.fromNode(node, Card.Type.ONE_TIME)
+        ),
+        ADD_FUNDS(
+                "addFunds",
+                AddFundsCommand::fromNode
+        ),
+        DELETE_ACCOUNT(
+                "deleteAccount",
+                DeleteAccountCommand::fromNode
+        ),
+        DELETE_CARD(
+                "deleteCard",
+                DeleteCardCommand::fromNode
+        ),
+        SET_MIN_BALANCE(
+                "setMinimumBalance",
+                MinBalanceCommand::fromNode
+        ),
+        CHECK_CARD_STATUS(
+                "checkCardStatus",
+                CheckCardCommand::fromNode
+        ),
+        PAY_ONLINE(
+                "payOnline",
+                PayOnlineCommand::fromNode
+        ),
+        SEND_MONEY(
+                "sendMoney",
+                SendMoneyCommand::fromNode
+        ),
+        SET_ALIAS(
+                "setAlias",
+                SetAliasCommand::fromNode
+        ),
+        SPLIT_PAYMENT(
+                "splitPayment",
+                SplitPayCommand::fromNode
+        ),
+        ADD_INTEREST(
+                "addInterest",
+                AddInterestCommand::fromNode
+        ),
+        CHANGE_INTEREST_RATE(
+                "changeInterestRate",
+                ChangeInterestCommand::fromNode
+        ),
+        REPORT(
+                "report",
+                ReportCommand::fromNode
+        ),
+        SPENDINGS_REPORT(
+                "spendingsReport",
+                SpendingReportCommand::fromNode
+        ),
 
-        PRINT_TRANSACTIONS("printTransactions"),
-        PRINT_USERS("printUsers");
+        PRINT_TRANSACTIONS(
+                "printTransactions",
+                PrintTransactionsCommand::fromNode
+        ),
+        PRINT_USERS(
+                "printUsers",
+                node -> new PrintUsersCommand()
+        );
 
         private final String label;
-
-        public static List<String> possibleValues() {
-            return Arrays.stream(Command.Type.values()).map((command -> command.label)).toList();
-        }
+        private final Function<JsonNode, Command.Base> commandSupplier;
 
         public static Type fromString(String label) throws BankingInputException {
             try {
@@ -55,13 +109,18 @@ public interface Command {
             }
         }
 
-        Type(String label) {
+        Type(final String label, final Function<JsonNode, Command.Base> commandSupplier) {
             this.label = label;
+            this.commandSupplier = commandSupplier;
         }
 
         @Override
         public String toString() {
             return label;
+        }
+
+        public Command.Base parse(final JsonNode node) {
+            return commandSupplier.apply(node);
         }
     }
 
@@ -70,36 +129,15 @@ public interface Command {
             throw new BankingInputException("Command node is not an object");
         }
 
-        Command.Type type = Type.fromString(node.get("command").asText());
+        Command.Type type = Command.Type.fromString(
+                IOUtils.readStringChecked(node, "command")
+        );
 
-        if (node.get("timestamp") == null) {
-            throw new BankingInputException("Command has no command field or timestamp field");
-        }
+        int timestamp = IOUtils.readIntChecked(node, "timestamp");
 
-        Command.Base command = switch (type) {
-            case ADD_ACCOUNT -> AddAccountCommand.fromNode(node);
-            case CREATE_CARD -> CreateCardCommand.fromNode(node, Card.Type.CLASSIC);
-            case CREATE_ONE_TIME_CARD -> CreateCardCommand.fromNode(node, Card.Type.ONE_TIME);
-            case ADD_FUNDS -> AddFundsCommand.fromNode(node);
-            case DELETE_ACCOUNT -> DeleteAccountCommand.fromNode(node);
-            case DELETE_CARD -> DeleteCardCommand.fromNode(node);
-            case SET_MIN_BALANCE -> MinBalanceCommand.fromNode(node);
-            case PAY_ONLINE -> PayOnlineCommand.fromNode(node);
-            case SEND_MONEY -> SendMoneyCommand.fromNode(node);
-            case SET_ALIAS -> SetAliasCommand.fromNode(node);
-            case CHECK_CARD_STATUS -> CheckCardCommand.fromNode(node);
-            case ADD_INTEREST -> AddInterestCommand.fromNode(node);
-            case CHANGE_INTEREST_RATE -> ChangeInterestCommand.fromNode(node);
-            case SPLIT_PAYMENT -> SplitPayCommand.fromNode(node);
-            case REPORT -> ReportCommand.fromNode(node);
-            case SPENDINGS_REPORT -> SpendingReportCommand.fromNode(node);
+        Command.Base command = type.parse(node);
+        command.timestamp = timestamp;
 
-            case PRINT_TRANSACTIONS -> PrintTransactionsCommand.fromNode(node);
-            case PRINT_USERS -> new PrintUsersCommand();
-            default -> throw new BankingInputException("[" + BankingSystem.TEST_NUMBER + "] Unknown command: " + type);
-        };
-
-        command.timestamp = node.get("timestamp").asInt();
         return command;
     }
 

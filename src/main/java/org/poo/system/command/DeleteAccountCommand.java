@@ -1,6 +1,7 @@
 package org.poo.system.command;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.poo.io.IOUtils;
 import org.poo.system.BankingSystem;
 import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
@@ -56,13 +57,10 @@ public class DeleteAccountCommand extends Command.Base {
     }
 
     public static DeleteAccountCommand fromNode(final JsonNode node) throws BankingInputException {
-        String email = node.get("email").asText();
-        String IBAN = node.get("account").asText();
-        if (email.isEmpty() || IBAN.isEmpty()) {
-            throw new BankingInputException("Missing email or IBAN for DeleteAccount\n" + node.toPrettyString());
-        }
+        String email = IOUtils.readStringChecked(node, "email");
+        String account = IOUtils.readStringChecked(node, "account");
 
-        return new DeleteAccountCommand(IBAN, email);
+        return new DeleteAccountCommand(account, email);
     }
 
 }

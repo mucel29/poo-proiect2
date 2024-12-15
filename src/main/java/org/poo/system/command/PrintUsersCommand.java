@@ -19,11 +19,7 @@ public class PrintUsersCommand extends Command.Base {
                 arr -> BankingSystem
                         .getInstance()
                         .getUsers()
-                        .stream()
-                        .forEach(
-                                user -> arr
-                                        .add(user.toNode())
-                                )
+                        .forEach(user -> arr.add(user.toNode()))
         );
     }
 

@@ -2,6 +2,7 @@ package org.poo.system.exchange;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Getter;
+import org.poo.io.IOUtils;
 import org.poo.system.exceptions.BankingInputException;
 import org.poo.system.exceptions.ExchangeException;
 
@@ -38,12 +39,9 @@ public class Exchange {
             throw new BankingInputException("Exchange rate is not an object node");
         }
 
-        String from = node.get("from").asText();
-        String to = node.get("to").asText();
-        double rate = node.get("rate").asDouble(-1);
-        if (from.isEmpty() || to.isEmpty() || rate < 0) {
-            throw new BankingInputException("Invalid exchange format\n" + node.toPrettyString());
-        }
+        String from = IOUtils.readStringChecked(node, "from");
+        String to = IOUtils.readStringChecked(node, "to");
+        double rate = IOUtils.readDoubleChecked(node, "rate");
 
         registeredCurrencies.add(from);
         registeredCurrencies.add(to);
@@ -70,31 +68,16 @@ public class Exchange {
         }
         Graph<String> currencyGraph = new Graph<>();
 
-        exchanges
-                .parallelStream()
-                .forEach(
-                    exchange -> currencyGraph
-                            .addEdge(
-                                    exchange.getFrom(),
-                                    exchange.getTo(),
-                                    exchange.getRate()
-                            )
-                );
+        exchanges.forEach(
+                exchange -> currencyGraph
+                        .addEdge(
+                                exchange.getFrom(),
+                                exchange.getTo(),
+                                exchange.getRate()
+                        )
+        );
 
-        currencyGraph
-                .computePaths()
-                .entrySet()
-                .parallelStream()
-                .forEach(
-                    entry -> exchanges
-                            .add(
-                                new Exchange(
-                                    entry.getKey().getFirst(),
-                                    entry.getKey().getSecond(),
-                                    entry.getValue()
-                                )
-                            )
-                );
+        currencyGraph.computePaths().forEach((key, value) -> exchanges.add(new Exchange(key.getFirst(), key.getSecond(), value)));
 
     }
 
@@ -123,9 +106,7 @@ public class Exchange {
 
     public static void printRates() {
         System.out.println("Composed rates: ");
-        exchanges.parallelStream().forEach(exchange ->
-                System.out.println(exchange.getFrom() + " -> " + exchange.getTo() + " [" + exchange.getRate() + "]")
-        );
+        exchanges.parallelStream().forEach(exchange -> System.out.println(exchange.getFrom() + " -> " + exchange.getTo() + " [" + exchange.getRate() + "]"));
     }
 
 }

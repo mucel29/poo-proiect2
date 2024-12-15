@@ -2,6 +2,7 @@ package org.poo.system.command;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import org.poo.io.IOUtils;
 import org.poo.system.BankingSystem;
 import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
@@ -50,13 +51,9 @@ public class ReportCommand extends Command.Base {
     }
 
     public static ReportCommand fromNode(final JsonNode node) throws BankingInputException {
-        String account = node.get("account").asText();
-        int startTimestamp = node.get("startTimestamp").asInt(-1);
-        int endTimestamp = node.get("endTimestamp").asInt(-1);
-
-        if (account.isEmpty() || startTimestamp == -1 || endTimestamp == -1) {
-            throw new BankingInputException("Missing arguments for Report\n" + node.toPrettyString());
-        }
+        String account = IOUtils.readStringChecked(node, "account");
+        int startTimestamp = IOUtils.readIntChecked(node, "startTimestamp");
+        int endTimestamp = IOUtils.readIntChecked(node, "endTimestamp");
 
         return new ReportCommand(account, startTimestamp, endTimestamp);
     }

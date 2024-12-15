@@ -1,37 +1,42 @@
 package org.poo.system.command;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Setter;
+import org.poo.io.IOUtils;
 import org.poo.system.BankingSystem;
 import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.BankingInputException;
 
+@Setter
 public class SetAliasCommand extends Command.Base {
 
-    private final String alias;
-    private final String email;
-    private final String IBAN;
+    private String alias;
+    private String email;
+    private String account;
 
-    public SetAliasCommand(String alias, String email, String IBAN) {
+    public SetAliasCommand(String alias, String email, String account) {
         super(Command.Type.SET_ALIAS);
         this.alias = alias;
         this.email = email;
-        this.IBAN = IBAN;
+        this.account = account;
+    }
+
+    public SetAliasCommand() {
+        super(Command.Type.SET_ALIAS);
     }
 
     @Override
     public void execute() {
         // What can I do with the email field????
-        BankingSystem.getInstance().getAliasMap().put(alias, IBAN);
+        BankingSystem.getInstance().getAliasMap().put(alias, account);
     }
 
     public static SetAliasCommand fromNode(final JsonNode node) throws BankingInputException {
-        String alias = node.get("alias").asText();
-        String email = node.get("email").asText();
-        String IBAN = node.get("account").asText();
-
-        if (alias.isEmpty() || email.isEmpty() || IBAN.isEmpty()) {
-            throw new BankingInputException("Missing arguments for SetAlias\n" + node.toPrettyString());
-        }
+        String alias = IOUtils.readStringChecked(node, "alias");
+        String email = IOUtils.readStringChecked(node, "email");
+        String IBAN = IOUtils.readStringChecked(node, "IBAN");
 
         return new SetAliasCommand(alias, email, IBAN);
     }

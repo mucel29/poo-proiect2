@@ -1,6 +1,7 @@
 package org.poo.system.command;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.poo.io.IOUtils;
 import org.poo.system.BankingSystem;
 import org.poo.system.exchange.Exchange;
 import org.poo.system.Transaction;
@@ -78,7 +79,6 @@ public class PayOnlineCommand extends Command.Base {
             throw new OperationException("Not enough balance: " + targetAccount.getFunds() + " (wanted to pay " + deducted + " " + targetAccount.getCurrency() + ") [" + amount + " " + currency + "]");
         }
 
-        BankingSystem.addCommerciantPayment(commerciant, deducted);
         targetAccount.setFunds(targetAccount.getFunds() - deducted);
         System.out.println("Paid " + amount + " " + currency + " (" + deducted + " " + targetAccount.getCurrency() + ") to " + commerciant);
 
@@ -90,25 +90,32 @@ public class PayOnlineCommand extends Command.Base {
 
         // Generate a new one time card
         if (targetCard.getCardType() == Card.Type.ONE_TIME) {
-            new DeleteCardCommand(targetCard.getCardNumber(), targetUser.getEmail(), timestamp).execute();
-            new CreateCardCommand(Card.Type.ONE_TIME, targetAccount.getIBAN(), targetUser.getEmail(), timestamp).execute();
-//            targetCard.setCardNumber(Utils.generateCardNumber());
+            new DeleteCardCommand(
+                    targetCard.getCardNumber(),
+                    targetUser.getEmail(),
+                    timestamp
+            ).execute();
+            new CreateCardCommand(
+                    Card.Type.ONE_TIME,
+                    targetAccount.getIBAN(),
+                    targetUser.getEmail(),
+                    timestamp
+            ).execute();
         }
 
     }
 
     public static PayOnlineCommand fromNode(final JsonNode node) throws BankingInputException {
-        double amount = node.get("amount").asDouble(-1);
-        String cardNumber = node.get("cardNumber").asText();
-        String email = node.get("email").asText();
-        String description = node.get("description").asText();
-        String commerciant = node.get("commerciant").asText();
+        double amount = IOUtils.readDoubleChecked(node, "amount");
 
-        String currency = Exchange.verifyCurrency(node.get("currency").asText());
+        String cardNumber = IOUtils.readStringChecked(node, "cardNumber");
+        String email = IOUtils.readStringChecked(node, "email");
+        String description = IOUtils.readStringChecked(node, "description");
+        String commerciant = IOUtils.readStringChecked(node, "commerciant");
 
-        if (cardNumber.isEmpty() || amount < 0 || description.isEmpty() || commerciant.isEmpty()) {
-            throw new BankingInputException("Missing arguments for PayOnline\n" + node.toPrettyString());
-        }
+        String currency = Exchange.verifyCurrency(
+                IOUtils.readStringChecked(node, "currency")
+        );
 
         return new PayOnlineCommand(email, cardNumber, amount, currency, description, commerciant);
     }

@@ -1,6 +1,7 @@
 package org.poo.system.command;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.poo.io.IOUtils;
 import org.poo.system.BankingSystem;
 import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
@@ -52,10 +53,7 @@ public class CheckCardCommand extends Command.Base {
     }
 
     public static CheckCardCommand fromNode(final JsonNode node) throws BankingInputException {
-        String cardNumber = node.get("cardNumber").asText();
-        if (cardNumber.isEmpty()) {
-            throw new BankingInputException("Missing argument for CheckCard\n" + node.toPrettyString());
-        }
+        String cardNumber = IOUtils.readStringChecked(node, "cardNumber");
 
         return new CheckCardCommand(cardNumber);
     }

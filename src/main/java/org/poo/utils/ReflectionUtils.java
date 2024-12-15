@@ -5,20 +5,32 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 
-public class ReflectionUtils {
+public final class ReflectionUtils {
 
     private ReflectionUtils() {
 
     }
 
-    public static void addField(ObjectNode root, Field field, Object caller) {
+    /**
+     * Adds a given `Field` to an `ObjectNode`
+     * @param root the ObjectNode
+     * @param field the Field
+     * @param caller the Declaring object of the field
+     */
+    public static void addField(final ObjectNode root, final Field field, final Object caller) {
         field.setAccessible(true);
         try {
+            // Check if the field exists
             if (field.get(caller) == null) {
                 return;
             }
+            // Check to which object to cast
             if (field.getType().isAssignableFrom(String.class)) {
                 root.put(field.getName(), (String) field.get(caller));
             } else if (field.getType().isAssignableFrom(Integer.class)) {
@@ -46,7 +58,21 @@ public class ReflectionUtils {
 
     }
 
-    public static void copyFields(Field[] from, Field[] to, Object caller, Object toObject) {
+    /**
+     * Copy fields from one object to another.
+     * `to` and `from` are needed because the
+     * caller can specify fields from the object's superclass
+     * @param from the fields to copy from
+     * @param to the fields to copy to
+     * @param caller the object to which `from` belongs
+     * @param toObject the object to which `to` belongs
+     */
+    public static void copyFields(
+            final Field[] from,
+            final Field[] to,
+            final Object caller,
+            final Object toObject
+    ) {
         Map<String, Field> fieldMap = new HashMap<>();
         Arrays.stream(to).forEach(field -> fieldMap.put(field.getName(), field));
         try {
@@ -60,9 +86,8 @@ public class ReflectionUtils {
                     }
                     toField.setAccessible(true);
                     fromField.setAccessible(true);
-//                    System.out.println("setting " + fromField.get(caller));
+
                     toField.set(toObject, fromField.get(caller));
-//                    System.out.println("set? " + toField.get(toObject));
                 }
             }
         } catch (IllegalAccessException e) {
@@ -70,7 +95,13 @@ public class ReflectionUtils {
         }
     }
 
-    public static Field findField(String fieldName, Object caller) {
+    /**
+     * Find an object's field
+     * @param fieldName the name of the field
+     * @param caller the owner of the field
+     * @return the Field if it can be accessed or null
+     */
+    public static Field findField(final String fieldName, final Object caller) {
         try {
             return Arrays.stream(caller.getClass().getDeclaredFields())
                     .filter((field) -> field.getName().equals(fieldName))

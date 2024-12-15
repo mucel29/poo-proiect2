@@ -1,6 +1,7 @@
 package org.poo.system.command;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.poo.io.IOUtils;
 import org.poo.system.BankingSystem;
 import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.BankingInputException;
@@ -33,10 +34,8 @@ public class AddInterestCommand extends Command.Base {
     }
 
     public static AddInterestCommand fromNode(final JsonNode node) throws BankingInputException {
-        String account = node.get("account").asText();
-        if (account.isEmpty()) {
-            throw new BankingInputException("Missing argument for AddInterest\n" + node.toPrettyString());
-        }
+        String account = IOUtils.readStringChecked(node, "account");
+
         return new AddInterestCommand(account);
     }
 

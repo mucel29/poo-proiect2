@@ -1,6 +1,7 @@
 package org.poo.system.command;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.poo.io.IOUtils;
 import org.poo.system.BankingSystem;
 import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
@@ -41,12 +42,8 @@ public class ChangeInterestCommand extends Command.Base {
     }
 
     public static ChangeInterestCommand fromNode(final JsonNode node) throws BankingInputException {
-        String account = node.get("account").asText();
-        double newInterestRate = node.get("interestRate").asDouble(-1);
-
-        if (account.isEmpty() || newInterestRate < 0) {
-            throw new BankingInputException("Missing argument for ChangeInterest\n" + node.toPrettyString());
-        }
+        String account = IOUtils.readStringChecked(node, "account");
+        double newInterestRate = IOUtils.readDoubleChecked(node, "interestRate");
 
         return new ChangeInterestCommand(account, newInterestRate);
     }

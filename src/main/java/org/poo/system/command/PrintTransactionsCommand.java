@@ -1,6 +1,7 @@
 package org.poo.system.command;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.poo.io.IOUtils;
 import org.poo.system.BankingSystem;
 import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.BankingInputException;
@@ -35,10 +36,7 @@ public class PrintTransactionsCommand extends Command.Base {
     }
 
     public static PrintTransactionsCommand fromNode(final JsonNode node) throws BankingInputException {
-        String email = node.get("email").asText();
-        if (email.isEmpty()) {
-            throw new BankingInputException("Missing email for PrintTransactions\n" + node.toPrettyString());
-        }
+        String email = IOUtils.readStringChecked(node, "email");
 
         return new PrintTransactionsCommand(email);
     }

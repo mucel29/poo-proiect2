@@ -1,6 +1,7 @@
 package org.poo.system.command;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.poo.io.IOUtils;
 import org.poo.system.BankingSystem;
 import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
@@ -75,16 +76,12 @@ public class SendMoneyCommand extends Command.Base {
     }
 
     public static SendMoneyCommand fromNode(final JsonNode node) throws BankingInputException {
-        String sender = node.get("account").asText();
-        String receiver = node.get("receiver").asText();
-        double amount = node.get("amount").asDouble(-1);
-        String description = node.get("description").asText();
+        String account = IOUtils.readStringChecked(node, "account");
+        String receiver = IOUtils.readStringChecked(node, "receiver");
+        double amount = IOUtils.readDoubleChecked(node, "amount");
+        String description = IOUtils.readStringChecked(node, "description");
 
-        if (sender.isEmpty() || receiver.isEmpty() || description.isEmpty() || amount < 0) {
-            throw new BankingInputException("Missing arguments for SendMoney\n" + node.toPrettyString());
-        }
-
-        return new SendMoneyCommand(sender, receiver, amount, description);
+        return new SendMoneyCommand(account, receiver, amount, description);
     }
 
 }

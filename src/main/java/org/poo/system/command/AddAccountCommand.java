@@ -1,6 +1,7 @@
 package org.poo.system.command;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.poo.io.IOUtils;
 import org.poo.system.BankingSystem;
 import org.poo.system.exchange.Exchange;
 import org.poo.system.Transaction;
@@ -31,11 +32,6 @@ public class AddAccountCommand extends Command.Base {
 
         // Get user by using the email
         User targetUser = BankingSystem.getUserByEmail(this.email);
-        if (targetUser == null) {
-            return; // ??? output
-        }
-
-        // We know the currency is supported, otherwise there would've been an Exception already
 
         Account newAccount = new Account(targetUser, Utils.generateIBAN(), this.currency, this.accountType);
         if (this.accountType == Account.Type.SAVINGS) {
@@ -50,29 +46,19 @@ public class AddAccountCommand extends Command.Base {
 
     public static AddAccountCommand fromNode(JsonNode node) throws BankingInputException {
 
-        String email = node.get("email").asText();
+        String email = IOUtils.readStringChecked(node, "email");
+        String currency = IOUtils.readStringChecked(node, "currency");
 
-        // TODO: verify that the currency is registered [verifyCurrency that returns String ig]
-
-        // Can't verify currency here, first tests don't have exchange rates to register them
-        String currency = node.get("currency").asText();
-
-        // Just add it ig
         Exchange.registerCurrency(currency);
 
-        // This will throw an exception if it's empty anyway
-        Account.Type accountType = Account.Type.fromString(node.get("accountType").asText());
+        Account.Type accountType = Account.Type.fromString(
+                IOUtils.readStringChecked(node, "accountType")
+        );
 
-        if (email.isEmpty()) {
-            throw new BankingInputException("Missing email for AddAccount\n" + node.toPrettyString());
-        }
 
         double interest = 0;
         if (accountType == Account.Type.SAVINGS) {
-            if (node.get("interestRate") == null) {
-                throw new BankingInputException("Missing interest for savings account\n" + node.toPrettyString());
-            }
-            interest = node.get("interestRate").asDouble();
+            interest = IOUtils.readDoubleChecked(node, "interestRate");
         }
 
         return new AddAccountCommand(email, currency, accountType, interest);

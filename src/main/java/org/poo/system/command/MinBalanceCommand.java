@@ -1,6 +1,7 @@
 package org.poo.system.command;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.poo.io.IOUtils;
 import org.poo.system.BankingSystem;
 import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.BankingInputException;
@@ -26,13 +27,9 @@ public class MinBalanceCommand extends Command.Base {
     }
 
     public static MinBalanceCommand fromNode(final JsonNode node) throws BankingInputException {
-        double amount = node.get("amount").asDouble(-1);
-        String account = node.get("account").asText();
-
-        if (account.isEmpty() || amount < 0) {
-            throw new BankingInputException("Missing IBAN / amout from MinBalance\n" + node.toPrettyString());
-        }
-
+        double amount = IOUtils.readDoubleChecked(node, "amount");
+        String account = IOUtils.readStringChecked(node, "account");
+        
         return new MinBalanceCommand(account, amount);
     }
 }

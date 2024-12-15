@@ -1,6 +1,7 @@
 package org.poo.system.command;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.poo.io.IOUtils;
 import org.poo.system.BankingSystem;
 import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.BankingInputException;
@@ -26,12 +27,8 @@ public class AddFundsCommand extends Command.Base {
     }
 
     public static AddFundsCommand fromNode(final JsonNode node) throws BankingInputException {
-        String IBAN = node.get("account").asText();
-        double amount = node.get("amount").asDouble(-1);
-
-        if (IBAN.isEmpty() || amount < 0) {
-            throw new BankingInputException("Missing account / amount for AddFunds\n" + node.toPrettyString());
-        }
+        String IBAN = IOUtils.readStringChecked(node, "account");
+        double amount = IOUtils.readDoubleChecked(node, "amount");
 
         return new AddFundsCommand(IBAN, amount);
     }

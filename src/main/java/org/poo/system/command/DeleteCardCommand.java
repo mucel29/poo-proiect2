@@ -1,6 +1,7 @@
 package org.poo.system.command;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.poo.io.IOUtils;
 import org.poo.system.BankingSystem;
 import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
@@ -51,11 +52,8 @@ public class DeleteCardCommand extends Command.Base {
     }
 
     public static DeleteCardCommand fromNode(final JsonNode node) throws BankingInputException {
-        String cardNumber = node.get("cardNumber").asText();
-        String email = node.get("email").asText();
-        if (cardNumber.isEmpty() || email.isEmpty()) {
-            throw new BankingInputException("Missing arguments for DeleteCard\n" + node.toPrettyString());
-        }
+        String cardNumber = IOUtils.readStringChecked(node, "cardNumber");
+        String email = IOUtils.readStringChecked(node, "email");
 
         return new DeleteCardCommand(cardNumber, email);
     }
