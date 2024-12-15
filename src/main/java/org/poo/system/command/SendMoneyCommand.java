@@ -43,6 +43,13 @@ public class SendMoneyCommand extends Command.Base {
         double convertedAmount = amount * Exchange.getRate(senderAccount.getCurrency(), receiverAccount.getCurrency());
 
         if (senderAccount.getFunds() < amount) {
+            senderAccount
+                    .getOwner()
+                    .getTransactions()
+                    .add(new Transaction.Base(
+                            "Insufficient funds",
+                            timestamp
+                    ));
             throw new OperationException("Not enough balance: " + senderAccount.getFunds() + " (wanted to send " + amount + " " + senderAccount.getCurrency() + ") [" + convertedAmount + " " + receiverAccount.getCurrency() + "]");
         }
 

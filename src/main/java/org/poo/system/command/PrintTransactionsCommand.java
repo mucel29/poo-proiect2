@@ -22,7 +22,6 @@ public class PrintTransactionsCommand extends Command.Base {
         super.outputArray(
                 arr -> targetUser
                         .getTransactions()
-                        .stream()
                         .forEach(
                                 transaction -> {
                                     try {

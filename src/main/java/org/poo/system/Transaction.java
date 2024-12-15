@@ -1,6 +1,7 @@
 package org.poo.system;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.poo.io.StateWriter;
@@ -8,6 +9,7 @@ import org.poo.utils.NodeConvertable;
 import org.poo.utils.ReflectionUtils;
 
 import java.lang.reflect.Field;
+import java.util.List;
 
 public interface Transaction extends NodeConvertable, Cloneable {
     enum TransferType {
@@ -113,6 +115,21 @@ public interface Transaction extends NodeConvertable, Cloneable {
         private String card;
         
         public CardOperation(String description, int timestamp) {
+            super(description, timestamp);
+        }
+
+    }
+
+    @Setter @Accessors(chain = true)
+    class SplitPayment extends Base {
+        private String currency;
+        private double amount;
+        private List<String> involvedAccounts;
+
+        @Getter
+        private String error = null;
+
+        public SplitPayment(String description, int timestamp) {
             super(description, timestamp);
         }
 

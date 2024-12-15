@@ -1,11 +1,13 @@
 package org.poo.utils;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ReflectionUtils {
@@ -17,6 +19,9 @@ public class ReflectionUtils {
     public static void addField(ObjectNode root, Field field, Object caller) {
         field.setAccessible(true);
         try {
+            if (field.get(caller) == null) {
+                return;
+            }
             if (field.getType().isAssignableFrom(String.class)) {
                 root.put(field.getName(), (String) field.get(caller));
             } else if (field.getType().isAssignableFrom(Integer.class)) {
@@ -27,9 +32,16 @@ public class ReflectionUtils {
                 root.put(field.getName(), field.getDouble(caller));
             } else if (field.getType().equals(Integer.TYPE)) {
                 root.put(field.getName(), field.getInt(caller));
+            } else if (field.getType().isAssignableFrom(List.class)) {
+                // Only String lists supported
+                ArrayNode arr = root.putArray(field.getName());
+                List<?> fieldList = (List<?>) field.get(caller);
+                for (Object el : fieldList) {
+                    arr.add(el.toString());
+                }
             } else {
-                // Fallback to String
-                root.put(field.getName(), field.get(caller).toString());
+                    // Fallback to String
+                    root.put(field.getName(), field.get(caller).toString());
             }
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);

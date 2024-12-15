@@ -50,7 +50,7 @@ public class Account implements NodeConvertable {
     private Type accountType;
 
     private double interest;
-    private double funds;
+    private double funds = 0;
     private double minBalance = 0;
 
     private final List<Card> cards = new ArrayList<>();
@@ -60,7 +60,6 @@ public class Account implements NodeConvertable {
         this.IBAN = IBAN;
         this.currency = currency;
         this.accountType = accountType;
-        this.funds = 0;
     }
 
     @Override

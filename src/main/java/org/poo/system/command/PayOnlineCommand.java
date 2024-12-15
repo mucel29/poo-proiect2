@@ -52,16 +52,24 @@ public class PayOnlineCommand extends Command.Base {
         }
 
         if (!targetCard.isStatus()) {
+            targetCard
+                    .getAccount()
+                    .getOwner()
+                    .getTransactions()
+                    .add(new Transaction.Base(
+                            "The card is frozen",
+                            timestamp
+                    ));
             throw new OperationException("Card " + cardNumber + " is frozen");
         }
 
-        if (targetAccount.getFunds() < targetAccount.getMinBalance()) {
-            // Freeze card
-            targetCard.setStatus(false);
-            throw new OperationException("Balance under minimum");
-        }
+//        if (targetAccount.getFunds() < targetAccount.getMinBalance()) {
+//            // Freeze card
+//            targetCard.setStatus(false);
+//            throw new OperationException("Balance under minimum");
+//        }
 
-        double deducted = amount / Exchange.getRate(targetAccount.getCurrency(), currency);
+        double deducted = amount * Exchange.getRate(currency, targetAccount.getCurrency());
 
         if (targetAccount.getFunds() < deducted) {
             targetUser.getTransactions().add(

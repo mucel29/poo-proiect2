@@ -49,6 +49,7 @@ public class Exchange {
         registeredCurrencies.add(to);
 
         exchanges.add(new Exchange(from, to, rate));
+        exchanges.add(new Exchange(to, from, 1.0 / rate));
     }
 
     public static void registerExchanges(final JsonNode node) throws BankingInputException {

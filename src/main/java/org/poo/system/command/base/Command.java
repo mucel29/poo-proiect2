@@ -87,6 +87,10 @@ public interface Command {
             case PAY_ONLINE -> PayOnlineCommand.fromNode(node);
             case SEND_MONEY -> SendMoneyCommand.fromNode(node);
             case SET_ALIAS -> SetAliasCommand.fromNode(node);
+            case CHECK_CARD_STATUS -> CheckCardCommand.fromNode(node);
+            case ADD_INTEREST -> AddInterestCommand.fromNode(node);
+            case CHANGE_INTEREST_RATE -> ChangeInterestCommand.fromNode(node);
+            case SPLIT_PAYMENT -> SplitPayCommand.fromNode(node);
 
             case PRINT_TRANSACTIONS -> PrintTransactionsCommand.fromNode(node);
             case PRINT_USERS -> new PrintUsersCommand();
