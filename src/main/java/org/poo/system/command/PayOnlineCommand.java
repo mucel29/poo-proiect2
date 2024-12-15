@@ -12,6 +12,7 @@ import org.poo.system.exceptions.OwnershipException;
 import org.poo.system.user.Account;
 import org.poo.system.user.Card;
 import org.poo.system.user.User;
+import org.poo.utils.Utils;
 
 public class PayOnlineCommand extends Command.Base {
 
@@ -54,7 +55,6 @@ public class PayOnlineCommand extends Command.Base {
         if (!targetCard.isStatus()) {
             targetCard
                     .getAccount()
-                    .getOwner()
                     .getTransactions()
                     .add(new Transaction.Base(
                             "The card is frozen",
@@ -72,7 +72,7 @@ public class PayOnlineCommand extends Command.Base {
         double deducted = amount * Exchange.getRate(currency, targetAccount.getCurrency());
 
         if (targetAccount.getFunds() < deducted) {
-            targetUser.getTransactions().add(
+            targetAccount.getTransactions().add(
                     new Transaction.Base("Insufficient funds", timestamp)
             );
             throw new OperationException("Not enough balance: " + targetAccount.getFunds() + " (wanted to pay " + deducted + " " + targetAccount.getCurrency() + ") [" + amount + " " + currency + "]");
@@ -82,15 +82,17 @@ public class PayOnlineCommand extends Command.Base {
         targetAccount.setFunds(targetAccount.getFunds() - deducted);
         System.out.println("Paid " + amount + " " + currency + " (" + deducted + " " + targetAccount.getCurrency() + ") to " + commerciant);
 
-        targetUser.getTransactions().add(
+        targetAccount.getTransactions().add(
                 new Transaction.Payment("Card payment", timestamp)
                         .setCommerciant(commerciant)
                         .setAmount(deducted)
         );
 
-        // Freeze the one time card
+        // Generate a new one time card
         if (targetCard.getCardType() == Card.Type.ONE_TIME) {
-            targetCard.setStatus(false);
+            new DeleteCardCommand(targetCard.getCardNumber(), targetUser.getEmail(), timestamp).execute();
+            new CreateCardCommand(Card.Type.ONE_TIME, targetAccount.getIBAN(), targetUser.getEmail(), timestamp).execute();
+//            targetCard.setCardNumber(Utils.generateCardNumber());
         }
 
     }

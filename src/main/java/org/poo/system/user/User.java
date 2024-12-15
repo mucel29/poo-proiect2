@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -25,7 +26,6 @@ public class User implements NodeConvertable {
     private String email;
 
     private final List<Account> accounts = new ArrayList<>();
-    private final List<Transaction> transactions = new ArrayList<>();
 
     public User(String firstName, String lastName, String email) {
         this.firstName = firstName;
@@ -75,6 +75,15 @@ public class User implements NodeConvertable {
         } catch (NoSuchElementException e) {
             throw new OwnershipException("User `" + this.email + "` does not own an account with the IBAN `" + IBAN + "`");
         }
+    }
+
+    public List<Transaction> getTransactions() {
+        return accounts
+                .stream()
+                .flatMap(account -> account.getTransactions().stream())
+                .sorted(Transaction::compareTo)
+                .collect(Collectors.toList());
+
     }
 
     @Override

@@ -5,10 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ReflectionUtils {
 
@@ -70,6 +67,17 @@ public class ReflectionUtils {
             }
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public static Field findField(String fieldName, Object caller) {
+        try {
+            return Arrays.stream(caller.getClass().getDeclaredFields())
+                    .filter((field) -> field.getName().equals(fieldName))
+                    .findFirst()
+                    .get();
+        } catch (NoSuchElementException e) {
+            return null;
         }
     }
 

@@ -27,13 +27,12 @@ public class Card implements NodeConvertable {
     private Account account;
     private Type cardType;
     private String cardNumber;
-    private boolean status;
+    private boolean status = true;
 
     public Card(Account account, Type cardType, String cardNumber) {
         this.account = account;
         this.cardType = cardType;
         this.cardNumber = cardNumber;
-        this.status = true;
     }
 
     @Override

@@ -1,6 +1,7 @@
 package org.poo.system.exchange;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Graph <T> {
 
@@ -37,7 +38,7 @@ public class Graph <T> {
 
         Queue<Pair<T, Double>> queue = new LinkedList<>();
 
-        edges.get(node).parallelStream().forEach(queue::add);
+        edges.get(node).stream().forEach(queue::add);
 
         while (!queue.isEmpty()) {
             // Remove node from the queue
@@ -60,9 +61,9 @@ public class Graph <T> {
                 bestPaths.put(pair.getFirst(), pair.getSecond());
             }
 
-            // Add the node's neighbours with updated path (it's multiplied not added, weights are 0-1)
+            // Add the node's neighbours with updated path (it's multiplied not added)
             if (edges.containsKey(pair.getFirst())) {
-                edges.get(pair.getFirst()).parallelStream().forEach(next -> queue.add(new Pair<>(next.getFirst(), pair.getSecond() * next.getSecond())));
+                edges.get(pair.getFirst()).stream().forEach(next -> queue.add(new Pair<>(next.getFirst(), pair.getSecond() * next.getSecond())));
             }
 
         }
@@ -71,10 +72,10 @@ public class Graph <T> {
     }
 
     public Map<Pair<T, T>, Double> computePaths() {
-        Map<Pair<T, T>, Double> paths = new HashMap<>();
+        Map<Pair<T, T>, Double> paths = new ConcurrentHashMap<>();
 
-        edges.keySet().parallelStream().forEach(from -> {
-            getBestPaths(from).entrySet().parallelStream().forEach(path -> {
+        edges.keySet().stream().forEach(from -> {
+            getBestPaths(from).entrySet().stream().forEach(path -> {
                 paths.put(new Pair<>(from, path.getKey()), path.getValue());
             });
         });

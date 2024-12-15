@@ -9,9 +9,10 @@ import org.poo.utils.NodeConvertable;
 import org.poo.utils.ReflectionUtils;
 
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.List;
 
-public interface Transaction extends NodeConvertable, Cloneable {
+public interface Transaction extends NodeConvertable, Cloneable, Comparable<Transaction> {
     enum TransferType {
         SENT,
         RECEIVED;
@@ -24,6 +25,9 @@ public interface Transaction extends NodeConvertable, Cloneable {
     }
 
     Transaction clone();
+    int getTimestamp();
+    String getCommerciant();
+    double getAmount();
 
     class Base implements Transaction {
         private final String description;
@@ -69,6 +73,58 @@ public interface Transaction extends NodeConvertable, Cloneable {
             ReflectionUtils.copyFields(this.getClass().getDeclaredFields(), to.getClass().getDeclaredFields(), this, to);
 
             return to;
+        }
+
+        @Override
+        public int getTimestamp() {
+            return timestamp;
+        }
+
+        @Override
+        public int compareTo(Transaction o) {
+            return this.timestamp - o.getTimestamp();
+        }
+
+        @Override
+        public String getCommerciant() {
+            Field f = ReflectionUtils.findField("commerciant", this);
+            if (f != null) {
+                f.setAccessible(true);
+                try {
+                    return f.get(this).toString();
+                } catch (Exception e) {
+                    return null;
+                }
+            }
+
+            return null;
+//            for (Field f : this.getClass().getDeclaredFields()) {
+//                if (f.getName().equals("commerciant")) {
+//                    f.setAccessible(true);
+//                    try {
+//                        return f.get(this).toString();
+//                    } catch (IllegalAccessException e) {
+//                        throw new RuntimeException(e);
+//                    }
+//                }
+//            }
+
+//            return null;
+        }
+
+        @Override
+        public double getAmount() {
+            Field f = ReflectionUtils.findField("amount", this);
+            if (f != null) {
+                f.setAccessible(true);
+                try {
+                    return f.getDouble(this);
+                } catch (Exception e) {
+                    return 0.0;
+                }
+            }
+
+            return 0.0;
         }
 
     }

@@ -31,7 +31,6 @@ public class ChangeInterestCommand extends Command.Base {
         }
 
         targetAccount
-                .getOwner()
                 .getTransactions()
                 .add(new Transaction.Base(
                         "Interest rate of the account changed to " + newRate, timestamp

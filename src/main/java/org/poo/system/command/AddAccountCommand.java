@@ -45,7 +45,7 @@ public class AddAccountCommand extends Command.Base {
         // Add the new account into the map and to the user
         BankingSystem.getInstance().getAccountMap().put(newAccount.getIBAN(), targetUser);
         targetUser.getAccounts().add(newAccount);
-        targetUser.getTransactions().add(new Transaction.Base("New account created", timestamp));
+        newAccount.getTransactions().add(new Transaction.Base("New account created", timestamp));
     }
 
     public static AddAccountCommand fromNode(JsonNode node) throws BankingInputException {

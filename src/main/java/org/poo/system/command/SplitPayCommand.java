@@ -43,11 +43,11 @@ public class SplitPayCommand extends Command.Base {
                         .setInvolvedAccounts(accounts);
 
         // Check if all accounts can pay and compute their deducted amount
-        targetAccounts.parallelStream().forEach((account) -> {
+        targetAccounts.forEach((account) -> {
             // Stop evaluating if an error already occurred
-            if (transaction.getError() != null) {
-                return;
-            }
+//            if (transaction.getError() != null) {
+//                return;
+//            }
 
             double localAmount = amount * Exchange.getRate(currency, account.getCurrency());
             if (account.getFunds() < localAmount) {
@@ -61,7 +61,7 @@ public class SplitPayCommand extends Command.Base {
 
         // Add transaction to user and possibly deduct amount
         targetAccounts.parallelStream().forEach((account) -> {
-           account.getOwner().getTransactions().add(transaction);
+           account.getTransactions().add(transaction);
            if (transaction.getError() == null) {
                account.setFunds(account.getFunds() - deducted.get(account));
            }
@@ -83,7 +83,6 @@ public class SplitPayCommand extends Command.Base {
         for (JsonNode account : accountsNode) {
             accounts.add(account.asText());
         }
-
         return new SplitPayCommand(accounts, currency, amount);
     }
 

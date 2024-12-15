@@ -25,6 +25,15 @@ public class CreateCardCommand extends Command.Base {
         this.email = email;
     }
 
+    // Package private constructor
+    CreateCardCommand(Card.Type cardType, String IBAN, String email, int timestamp) {
+        super(cardType.command());
+        this.cardType = cardType;
+        this.IBAN = IBAN;
+        this.email = email;
+        this.timestamp = timestamp;
+    }
+
     @Override
     public void execute() throws UserNotFoundException, OwnershipException {
         User targetUser = BankingSystem.getUserByEmail(email);
@@ -35,7 +44,7 @@ public class CreateCardCommand extends Command.Base {
         Account targetAccount = targetUser.getAccount(IBAN);
         Card newCard = new Card(targetAccount, cardType, Utils.generateCardNumber());
 
-        targetUser.getTransactions().add(
+        targetAccount.getTransactions().add(
                 new Transaction.CardOperation("New card created", timestamp)
                         .setCard(newCard.getCardNumber())
                         .setCardHolder(targetUser.getEmail())

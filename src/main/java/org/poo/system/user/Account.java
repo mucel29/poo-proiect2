@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Getter;
 import lombok.Setter;
 import org.poo.io.StateWriter;
+import org.poo.system.Transaction;
 import org.poo.system.exceptions.BankingInputException;
 import org.poo.utils.NodeConvertable;
 
@@ -54,6 +55,7 @@ public class Account implements NodeConvertable {
     private double minBalance = 0;
 
     private final List<Card> cards = new ArrayList<>();
+    private final List<Transaction> transactions = new ArrayList<>();
 
     public Account(User owner, String IBAN, String currency, Type accountType) {
         this.owner = owner;

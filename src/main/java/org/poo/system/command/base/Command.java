@@ -36,7 +36,7 @@ public interface Command {
         ADD_INTEREST("addInterest"),
         CHANGE_INTEREST_RATE("changeInterestRate"),
         REPORT("report"),
-        SPENDING_REPORT("spendingReport"),
+        SPENDINGS_REPORT("spendingsReport"),
 
         PRINT_TRANSACTIONS("printTransactions"),
         PRINT_USERS("printUsers");
@@ -91,6 +91,8 @@ public interface Command {
             case ADD_INTEREST -> AddInterestCommand.fromNode(node);
             case CHANGE_INTEREST_RATE -> ChangeInterestCommand.fromNode(node);
             case SPLIT_PAYMENT -> SplitPayCommand.fromNode(node);
+            case REPORT -> ReportCommand.fromNode(node);
+            case SPENDINGS_REPORT -> SpendingReportCommand.fromNode(node);
 
             case PRINT_TRANSACTIONS -> PrintTransactionsCommand.fromNode(node);
             case PRINT_USERS -> new PrintUsersCommand();

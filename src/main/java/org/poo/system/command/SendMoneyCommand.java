@@ -44,7 +44,6 @@ public class SendMoneyCommand extends Command.Base {
 
         if (senderAccount.getFunds() < amount) {
             senderAccount
-                    .getOwner()
                     .getTransactions()
                     .add(new Transaction.Base(
                             "Insufficient funds",
@@ -61,10 +60,10 @@ public class SendMoneyCommand extends Command.Base {
                 .setTransferType(Transaction.TransferType.SENT);
 
         senderAccount.setFunds(senderAccount.getFunds() - amount);
-        senderAccount.getOwner().getTransactions().add(transaction.clone());
+        senderAccount.getTransactions().add(transaction.clone());
 
         receiverAccount.setFunds(receiverAccount.getFunds() + convertedAmount);
-        receiverAccount.getOwner().getTransactions().add(
+        receiverAccount.getTransactions().add(
                 transaction
                         .setCurrency(receiverAccount.getCurrency())
                         .setAmount(convertedAmount)

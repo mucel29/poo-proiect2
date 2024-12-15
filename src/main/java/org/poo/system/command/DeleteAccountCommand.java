@@ -1,9 +1,8 @@
 package org.poo.system.command;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.poo.io.StateWriter;
 import org.poo.system.BankingSystem;
+import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.BankingInputException;
 import org.poo.system.exceptions.OperationException;
@@ -45,6 +44,10 @@ public class DeleteAccountCommand extends Command.Base {
 
         if (targetAccount.getFunds() > 0) {
             export(false);
+            targetAccount.getTransactions().add(new Transaction.Base(
+                    "Account couldn't be deleted - there are funds remaining",
+                    timestamp
+            ));
             throw new OperationException("Account " + IBAN + " still has funds!");
         }
 

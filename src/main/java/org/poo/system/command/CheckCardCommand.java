@@ -22,9 +22,9 @@ public class CheckCardCommand extends Command.Base {
     @Override
     public void execute()
     {
-        Card c;
+        Card targetCard;
         try {
-            c = BankingSystem.getCard(cardNumber);
+            targetCard = BankingSystem.getCard(cardNumber);
         } catch (OwnershipException e) {
             super.output((root) -> {
                 root.put("description", "Card not found");
@@ -32,16 +32,18 @@ public class CheckCardCommand extends Command.Base {
             });
             return;
         }
-        Account link = c.getAccount();
+
+
+        Account link = targetCard.getAccount();
         if (link.getFunds() <= link.getMinBalance()) {
             // Freeze card
-            c.setStatus(false);
-            link.getOwner().getTransactions().add(new Transaction.Base(
+            targetCard.setStatus(false);
+            link.getTransactions().add(new Transaction.Base(
                     "You have reached the minimum amount of funds, the card will be frozen",
                     timestamp
             ));
         } else if (link.getFunds() - link.getMinBalance() <= WARNING_THRESHOLD) {
-            link.getOwner().getTransactions().add(new Transaction.Base(
+            link.getTransactions().add(new Transaction.Base(
                     "Warning??????",
                     timestamp
             ));
