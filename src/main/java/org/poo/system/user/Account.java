@@ -15,7 +15,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-@Getter @Setter
+@Getter
 public class Account implements NodeConvertable {
 
     public enum Type {
@@ -23,18 +23,24 @@ public class Account implements NodeConvertable {
         SAVINGS;
 
 
-        public static List<String> possibleValues() {
-            return Arrays.stream(Type.values()).map((Type::toString)).toList();
-        }
-
         @Override
         public String toString() {
             return this.name().toLowerCase();
         }
 
-        public static Account.Type fromString(String label) throws BankingInputException {
+        /**
+         * Converts a String to an `Account.Type`
+         * @param label the string to convert
+         * @return the corresponding `Account.Type`
+         * @throws BankingInputException if the label can't be converted to an `Account.Type`
+         */
+        public static Account.Type fromString(final String label) throws BankingInputException {
             try {
-                return Arrays.stream(Account.Type.values()).filter(command -> command.toString().equals(label)).toList().getFirst();
+                return Arrays
+                        .stream(Account.Type.values())
+                        .filter(command -> command.toString().equals(label))
+                        .toList()
+                        .getFirst();
             } catch (NoSuchElementException e) {
                 throw new BankingInputException("Unknown account type: " + label);
             }
@@ -43,31 +49,43 @@ public class Account implements NodeConvertable {
     }
 
 
-    private User owner;
+    private final User owner;
 
-    private String IBAN;
+    private final String accountIBAN;
+    private final String currency;
+    private final Type accountType;
+
+    @Setter
     private String alias = "";
-    private String currency;
-    private Type accountType;
-
+    @Setter
     private double interest;
+    @Setter
     private double funds = 0;
+    @Setter
     private double minBalance = 0;
 
     private final List<Card> cards = new ArrayList<>();
     private final List<Transaction> transactions = new ArrayList<>();
 
-    public Account(User owner, String IBAN, String currency, Type accountType) {
+    public Account(
+            final User owner,
+            final String accountIBAN,
+            final String currency,
+            final Type accountType
+    ) {
         this.owner = owner;
-        this.IBAN = IBAN;
+        this.accountIBAN = accountIBAN;
         this.currency = currency;
         this.accountType = accountType;
     }
 
+    /**
+     * @return the JSON representation of the Account
+     */
     @Override
     public ObjectNode toNode() {
         ObjectNode root = StateWriter.getMapper().createObjectNode();
-        root.put("IBAN", IBAN);
+        root.put("IBAN", accountIBAN);
         root.put("currency", currency);
         root.put("type", accountType.toString());
         root.put("balance", funds);

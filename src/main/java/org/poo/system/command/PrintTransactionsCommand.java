@@ -12,11 +12,14 @@ public class PrintTransactionsCommand extends Command.Base {
 
     private final String email;
 
-    public PrintTransactionsCommand(String email) {
+    public PrintTransactionsCommand(final String email) {
         super(Command.Type.PRINT_TRANSACTIONS);
         this.email = email;
     }
 
+    /**
+     * @throws UserNotFoundException if the given user does not exist
+     */
     @Override
     public void execute() throws UserNotFoundException {
         User targetUser = BankingSystem.getUserByEmail(email);
@@ -35,7 +38,13 @@ public class PrintTransactionsCommand extends Command.Base {
         );
     }
 
-    public static PrintTransactionsCommand fromNode(final JsonNode node) throws BankingInputException {
+    /**
+     * Deserializes the given node into a `Command.Base` instance
+     * @param node the node to deserialize
+     * @return the command represented by the node
+     * @throws BankingInputException if the node is not a valid command
+     */
+    public static Command.Base fromNode(final JsonNode node) throws BankingInputException {
         String email = IOUtils.readStringChecked(node, "email");
 
         return new PrintTransactionsCommand(email);

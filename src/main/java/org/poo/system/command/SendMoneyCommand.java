@@ -19,7 +19,12 @@ public class SendMoneyCommand extends Command.Base {
     private final double amount;
     private final String description;
 
-    public SendMoneyCommand(String sender, String receiver, double amount, String description) {
+    public SendMoneyCommand(
+            final String sender,
+            final String receiver,
+            final double amount,
+            final String description
+    ) {
         super(Type.SEND_MONEY);
         this.sender = sender;
         this.receiver = receiver;
@@ -28,10 +33,13 @@ public class SendMoneyCommand extends Command.Base {
     }
 
 
+    /**
+     * @throws OwnershipException if no user owns the sender or receiver accounts
+     * @throws OperationException - if the sender is an alias instead of an account
+     * - if the sender doesn't have enough funds
+     */
     @Override
     public void execute() throws OwnershipException, OperationException {
-        // Todo: implement alias matching, Transactions
-        // TODO: Add reverse exchange: if we have EUR -> USD, we should also have USD -> EUR
         if (!Utils.verifyIBAN(sender)) {
             throw new OperationException("Invalid sender IBAN [can't use an user as alias]");
         }
@@ -41,7 +49,10 @@ public class SendMoneyCommand extends Command.Base {
                 ? BankingSystem.getAccount(receiver)
                 : BankingSystem.getByAlias(receiver);
 
-        double convertedAmount = amount * Exchange.getRate(senderAccount.getCurrency(), receiverAccount.getCurrency());
+        double convertedAmount = amount * Exchange.getRate(
+                senderAccount.getCurrency(),
+                receiverAccount.getCurrency()
+        );
 
         if (senderAccount.getFunds() < amount) {
             senderAccount
@@ -50,12 +61,24 @@ public class SendMoneyCommand extends Command.Base {
                             "Insufficient funds",
                             timestamp
                     ));
-            throw new OperationException("Not enough balance: " + senderAccount.getFunds() + " (wanted to send " + amount + " " + senderAccount.getCurrency() + ") [" + convertedAmount + " " + receiverAccount.getCurrency() + "]");
+            throw new OperationException(
+                    "Not enough balance: "
+                            + senderAccount.getFunds()
+                            + " (wanted to send "
+                            + amount
+                            + " "
+                            + senderAccount.getCurrency()
+                            + ") ["
+                            + convertedAmount
+                            + " "
+                            + receiverAccount.getCurrency()
+                            + "]"
+            );
         }
 
         Transaction.Transfer transaction = new Transaction.Transfer(description, timestamp)
-                .setSenderIBAN(senderAccount.getIBAN())
-                .setReceiverIBAN(receiverAccount.getIBAN())
+                .setSenderIBAN(senderAccount.getAccountIBAN())
+                .setReceiverIBAN(receiverAccount.getAccountIBAN())
                 .setAmount(amount)
                 .setCurrency(senderAccount.getCurrency())
                 .setTransferType(Transaction.TransferType.SENT);
@@ -71,11 +94,33 @@ public class SendMoneyCommand extends Command.Base {
                         .setTransferType(Transaction.TransferType.RECEIVED)
         );
 
-        System.out.println("Sent " + amount + " " + senderAccount.getCurrency() + " (" + convertedAmount + " " + receiverAccount.getCurrency() + ") to " + receiverAccount.getIBAN() + (Utils.verifyIBAN(receiver) ? "" : " [" + receiver + "]"));
+        System.out.println(
+                "Sent "
+                        + amount
+                        + " "
+                        + senderAccount.getCurrency()
+                        + " ("
+                        + convertedAmount
+                        + " "
+                        + receiverAccount.getCurrency()
+                        + ") to "
+                        + receiverAccount.getAccountIBAN()
+                        + (Utils.verifyIBAN(receiver)
+                        ? ""
+                        : " ["
+                        + receiver
+                        + "]")
+        );
 
     }
 
-    public static SendMoneyCommand fromNode(final JsonNode node) throws BankingInputException {
+    /**
+     * Deserializes the given node into a `Command.Base` instance
+     * @param node the node to deserialize
+     * @return the command represented by the node
+     * @throws BankingInputException if the node is not a valid command
+     */
+    public static Command.Base fromNode(final JsonNode node) throws BankingInputException {
         String account = IOUtils.readStringChecked(node, "account");
         String receiver = IOUtils.readStringChecked(node, "receiver");
         double amount = IOUtils.readDoubleChecked(node, "amount");

@@ -16,16 +16,21 @@ public class ReportCommand extends Command.Base {
     private final int startTimestamp;
     private final int endTimestamp;
 
-    public ReportCommand(String account, int startTimestamp, int endTimestamp) {
+    public ReportCommand(
+            final String account,
+            final int startTimestamp,
+            final int endTimestamp
+    ) {
         super(Type.REPORT);
         this.account = account;
         this.startTimestamp = startTimestamp;
         this.endTimestamp = endTimestamp;
     }
 
+    /**
+     */
     @Override
-    public void execute()
-    {
+    public void execute() {
         Account targetAccount;
         try {
              targetAccount = BankingSystem.getAccount(account);
@@ -42,7 +47,10 @@ public class ReportCommand extends Command.Base {
             root.put("currency", targetAccount.getCurrency());
             ArrayNode arr = root.putArray("transactions");
             for (Transaction transaction : targetAccount.getTransactions()) {
-                if (transaction.getTimestamp() >= startTimestamp && transaction.getTimestamp() <= endTimestamp) {
+                if (
+                        transaction.getTimestamp() >= startTimestamp
+                                && transaction.getTimestamp() <= endTimestamp
+                ) {
                     arr.add(transaction.toNode());
                 }
             }
@@ -50,7 +58,13 @@ public class ReportCommand extends Command.Base {
 
     }
 
-    public static ReportCommand fromNode(final JsonNode node) throws BankingInputException {
+    /**
+     * Deserializes the given node into a `Command.Base` instance
+     * @param node the node to deserialize
+     * @return the command represented by the node
+     * @throws BankingInputException if the node is not a valid command
+     */
+    public static Command.Base fromNode(final JsonNode node) throws BankingInputException {
         String account = IOUtils.readStringChecked(node, "account");
         int startTimestamp = IOUtils.readIntChecked(node, "startTimestamp");
         int endTimestamp = IOUtils.readIntChecked(node, "endTimestamp");

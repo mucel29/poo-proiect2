@@ -12,17 +12,19 @@ import org.poo.system.user.Card;
 
 public class CheckCardCommand extends Command.Base {
 
-    private final double WARNING_THRESHOLD = 30.0;
+    private static final double WARNING_THRESHOLD = 30.0;
     private final String cardNumber;
 
-    public CheckCardCommand(String cardNumber) {
+    public CheckCardCommand(final String cardNumber) {
         super(Type.CHECK_CARD_STATUS);
         this.cardNumber = cardNumber;
     }
 
+    /**
+     * @throws OwnershipException if the card does not belong to anyone
+     */
     @Override
-    public void execute()
-    {
+    public void execute() throws OwnershipException {
         Card targetCard;
         try {
             targetCard = BankingSystem.getCard(cardNumber);
@@ -52,7 +54,13 @@ public class CheckCardCommand extends Command.Base {
 
     }
 
-    public static CheckCardCommand fromNode(final JsonNode node) throws BankingInputException {
+    /**
+     * Deserializes the given node into a `Command.Base` instance
+     * @param node the node to deserialize
+     * @return the command represented by the node
+     * @throws BankingInputException if the node is not a valid command
+     */
+    public static Command.Base fromNode(final JsonNode node) throws BankingInputException {
         String cardNumber = IOUtils.readStringChecked(node, "cardNumber");
 
         return new CheckCardCommand(cardNumber);

@@ -14,34 +14,48 @@ import org.poo.system.user.User;
 
 public class DeleteAccountCommand extends Command.Base {
 
-    private final String IBAN;
+    private final String account;
     private final String email;
 
-    public DeleteAccountCommand(String IBAN, String email) {
+    public DeleteAccountCommand(
+            final String account,
+            final String email
+    ) {
         super(Type.DELETE_ACCOUNT);
-        this.IBAN = IBAN;
+        this.account = account;
         this.email = email;
     }
 
     private void export(final boolean success) {
         super.output(obj -> {
             if (success) {
-                obj.put("success", "Account deleted");
+                obj.put(
+                        "success",
+                        "Account deleted"
+                );
             } else {
-                obj.put("error", "Account couldn't be deleted - see org.poo.transactions for details");
+                obj.put(
+                        "error",
+                        "Account couldn't be deleted - see org.poo.transactions for details"
+                );
             }
             obj.put("timestamp", timestamp);
         });
     }
 
+    /**
+     * @throws UserNotFoundException if no user with the given email was found
+     * @throws OwnershipException if the given account is not owned by the given user
+     * @throws OperationException if the account still has funds
+     */
     @Override
     public void execute() throws UserNotFoundException, OwnershipException, OperationException {
         User targetUser = BankingSystem.getUserByEmail(email);
-        if (!BankingSystem.getUserByIBAN(IBAN).equals(targetUser)) {
-            throw new OwnershipException("Account " + IBAN + " does not belong to " + email);
+        if (!BankingSystem.getUserByIBAN(account).equals(targetUser)) {
+            throw new OwnershipException("Account " + account + " does not belong to " + email);
         }
 
-        Account targetAccount = BankingSystem.getAccount(IBAN);
+        Account targetAccount = BankingSystem.getAccount(account);
 
         if (targetAccount.getFunds() > 0) {
             export(false);
@@ -49,14 +63,20 @@ public class DeleteAccountCommand extends Command.Base {
                     "Account couldn't be deleted - there are funds remaining",
                     timestamp
             ));
-            throw new OperationException("Account " + IBAN + " still has funds!");
+            throw new OperationException("Account " + account + " still has funds!");
         }
 
         targetUser.getAccounts().remove(targetAccount);
         export(true);
     }
 
-    public static DeleteAccountCommand fromNode(final JsonNode node) throws BankingInputException {
+    /**
+     * Deserializes the given node into a `Command.Base` instance
+     * @param node the node to deserialize
+     * @return the command represented by the node
+     * @throws BankingInputException if the node is not a valid command
+     */
+    public static Command.Base fromNode(final JsonNode node) throws BankingInputException {
         String email = IOUtils.readStringChecked(node, "email");
         String account = IOUtils.readStringChecked(node, "account");
 

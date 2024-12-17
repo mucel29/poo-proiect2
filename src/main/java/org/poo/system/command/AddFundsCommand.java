@@ -11,26 +11,38 @@ import org.poo.system.user.Account;
 
 public class AddFundsCommand extends Command.Base {
 
-    private String IBAN;
+    private String account;
     private double amount;
 
-    public AddFundsCommand(String IBAN, double amount) {
+    public AddFundsCommand(
+            final String account,
+            final double amount
+    ) {
         super(Type.ADD_FUNDS);
-        this.IBAN = IBAN;
+        this.account = account;
         this.amount = amount;
     }
 
+    /**
+     * @throws UserNotFoundException no user owns the given account
+     */
     @Override
     public void execute() throws UserNotFoundException, OwnershipException {
-        Account targetAccount = BankingSystem.getAccount(this.IBAN);
+        Account targetAccount = BankingSystem.getAccount(this.account);
         targetAccount.setFunds(targetAccount.getFunds() + this.amount);
     }
 
-    public static AddFundsCommand fromNode(final JsonNode node) throws BankingInputException {
-        String IBAN = IOUtils.readStringChecked(node, "account");
+    /**
+     * Deserializes the given node into a `Command.Base` instance
+     * @param node the node to deserialize
+     * @return the command represented by the node
+     * @throws BankingInputException if the node is not a valid command
+     */
+    public static Command.Base fromNode(final JsonNode node) throws BankingInputException {
+        String account = IOUtils.readStringChecked(node, "account");
         double amount = IOUtils.readDoubleChecked(node, "amount");
 
-        return new AddFundsCommand(IBAN, amount);
+        return new AddFundsCommand(account, amount);
     }
 
 }

@@ -14,14 +14,21 @@ public class DeleteCardCommand extends Command.Base {
     private final String cardNumber;
     private final String email;
 
-    public DeleteCardCommand(String cardNumber, String email) {
+    public DeleteCardCommand(
+            final String cardNumber,
+            final String email
+    ) {
         super(Type.DELETE_CARD);
         this.cardNumber = cardNumber;
         this.email = email;
     }
 
     // Package private constructor
-    DeleteCardCommand(String cardNumber, String email, int timestamp) {
+    DeleteCardCommand(
+            final String cardNumber,
+            final String email,
+            final int timestamp
+    ) {
         super(Type.DELETE_CARD);
         this.cardNumber = cardNumber;
         this.email = email;
@@ -29,6 +36,10 @@ public class DeleteCardCommand extends Command.Base {
     }
 
 
+    /**
+     * @throws OwnershipException if the given card is not owned by the user
+     * or no user owns the given card
+     */
     @Override
     public void execute() throws OwnershipException {
         Card targetCard = BankingSystem.getCard(cardNumber);
@@ -44,14 +55,20 @@ public class DeleteCardCommand extends Command.Base {
                         ).setCard(targetCard.getCardNumber())
                         .setAccount(targetCard
                                 .getAccount()
-                                .getIBAN()
+                                .getAccountIBAN()
                         )
         );
         targetCard.getAccount().getCards().remove(targetCard);
         System.out.println("Deleted card: " + cardNumber);
     }
 
-    public static DeleteCardCommand fromNode(final JsonNode node) throws BankingInputException {
+    /**
+     * Deserializes the given node into a `Command.Base` instance
+     * @param node the node to deserialize
+     * @return the command represented by the node
+     * @throws BankingInputException if the node is not a valid command
+     */
+    public static Command.Base fromNode(final JsonNode node) throws BankingInputException {
         String cardNumber = IOUtils.readStringChecked(node, "cardNumber");
         String email = IOUtils.readStringChecked(node, "email");
 

@@ -3,17 +3,17 @@ package org.poo.system.command;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.poo.io.IOUtils;
 import org.poo.system.BankingSystem;
-import org.poo.system.exchange.Exchange;
-import org.poo.system.Transaction;
-import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.BankingInputException;
 import org.poo.system.exceptions.ExchangeException;
 import org.poo.system.exceptions.OperationException;
 import org.poo.system.exceptions.OwnershipException;
+import org.poo.system.exceptions.UserNotFoundException;
+import org.poo.system.exchange.Exchange;
+import org.poo.system.Transaction;
+import org.poo.system.command.base.Command;
 import org.poo.system.user.Account;
 import org.poo.system.user.Card;
 import org.poo.system.user.User;
-import org.poo.utils.Utils;
 
 public class PayOnlineCommand extends Command.Base {
 
@@ -24,7 +24,14 @@ public class PayOnlineCommand extends Command.Base {
     private final String description;
     private final String commerciant;
 
-    public PayOnlineCommand(String email, String cardNumber, double amount, String currency, String description, String commerciant) {
+    public PayOnlineCommand(
+            final String email,
+            final String cardNumber,
+            final double amount,
+            final String currency,
+            final String description,
+            final String commerciant
+    ) {
         super(Command.Type.PAY_ONLINE);
         this.email = email;
         this.cardNumber = cardNumber;
@@ -34,8 +41,14 @@ public class PayOnlineCommand extends Command.Base {
         this.commerciant = commerciant;
     }
 
+    /**
+     * @throws UserNotFoundException if the given user does not exist
+     * @throws OwnershipException if the given account is not owned by the given user
+     * @throws ExchangeException if no exchange from the account's currency
+     * to the given currency exists
+     */
     @Override
-    public void execute() throws OwnershipException, ExchangeException {
+    public void execute() throws UserNotFoundException, OwnershipException, ExchangeException {
         User targetUser = BankingSystem.getUserByEmail(email);
         Card targetCard;
         try {
@@ -64,23 +77,40 @@ public class PayOnlineCommand extends Command.Base {
             throw new OperationException("Card " + cardNumber + " is frozen");
         }
 
-//        if (targetAccount.getFunds() < targetAccount.getMinBalance()) {
-//            // Freeze card
-//            targetCard.setStatus(false);
-//            throw new OperationException("Balance under minimum");
-//        }
-
         double deducted = amount * Exchange.getRate(currency, targetAccount.getCurrency());
 
         if (targetAccount.getFunds() < deducted) {
             targetAccount.getTransactions().add(
                     new Transaction.Base("Insufficient funds", timestamp)
             );
-            throw new OperationException("Not enough balance: " + targetAccount.getFunds() + " (wanted to pay " + deducted + " " + targetAccount.getCurrency() + ") [" + amount + " " + currency + "]");
+            throw new OperationException(
+                    "Not enough balance: "
+                            + targetAccount.getFunds()
+                            + " (wanted to pay "
+                            + deducted
+                            + " "
+                            + targetAccount.getCurrency()
+                            + ") ["
+                            + amount
+                            + " "
+                            + currency
+                            + "]"
+            );
         }
 
         targetAccount.setFunds(targetAccount.getFunds() - deducted);
-        System.out.println("Paid " + amount + " " + currency + " (" + deducted + " " + targetAccount.getCurrency() + ") to " + commerciant);
+        System.out.println(
+                "Paid "
+                        + amount
+                        + " "
+                        + currency
+                        + " ("
+                        + deducted
+                        + " "
+                        + targetAccount.getCurrency()
+                        + ") to "
+                        + commerciant
+        );
 
         targetAccount.getTransactions().add(
                 new Transaction.Payment("Card payment", timestamp)
@@ -97,7 +127,7 @@ public class PayOnlineCommand extends Command.Base {
             ).execute();
             new CreateCardCommand(
                     Card.Type.ONE_TIME,
-                    targetAccount.getIBAN(),
+                    targetAccount.getAccountIBAN(),
                     targetUser.getEmail(),
                     timestamp
             ).execute();
@@ -105,7 +135,13 @@ public class PayOnlineCommand extends Command.Base {
 
     }
 
-    public static PayOnlineCommand fromNode(final JsonNode node) throws BankingInputException {
+    /**
+     * Deserializes the given node into a `Command.Base` instance
+     * @param node the node to deserialize
+     * @return the command represented by the node
+     * @throws BankingInputException if the node is not a valid command
+     */
+    public static Command.Base fromNode(final JsonNode node) throws BankingInputException {
         double amount = IOUtils.readDoubleChecked(node, "amount");
 
         String cardNumber = IOUtils.readStringChecked(node, "cardNumber");

@@ -20,16 +20,21 @@ public class SpendingReportCommand extends Command.Base {
     private final int startTimestamp;
     private final int endTimestamp;
 
-    public SpendingReportCommand(String account, int startTimestamp, int endTimestamp) {
+    public SpendingReportCommand(
+            final String account,
+            final int startTimestamp,
+            final int endTimestamp
+    ) {
         super(Type.SPENDINGS_REPORT);
         this.account = account;
         this.startTimestamp = startTimestamp;
         this.endTimestamp = endTimestamp;
     }
 
+    /**
+     */
     @Override
-    public void execute()
-    {
+    public void execute() {
         Account targetAccount;
         try {
             targetAccount = BankingSystem.getAccount(account);
@@ -83,17 +88,29 @@ public class SpendingReportCommand extends Command.Base {
             } ]
              */
             ArrayNode comArr = root.putArray("commerciants");
-            commerciants.keySet().stream().sorted(String::compareTo).forEach(commerciant->{
-                ObjectNode comObj = comArr.addObject();
-                comObj.put("commerciant", commerciant);
-                comObj.put("total", commerciants.get(commerciant));
-            });
+            commerciants
+                    .keySet()
+                    .stream()
+                    .sorted(String::compareTo)
+                    .forEach(
+                            commerciant -> {
+                                ObjectNode comObj = comArr.addObject();
+                                comObj.put("commerciant", commerciant);
+                                comObj.put("total", commerciants.get(commerciant));
+                            }
+                    );
 
         });
 
     }
 
-    public static SpendingReportCommand fromNode(final JsonNode node) throws BankingInputException {
+    /**
+     * Deserializes the given node into a `Command.Base` instance
+     * @param node the node to deserialize
+     * @return the command represented by the node
+     * @throws BankingInputException if the node is not a valid command
+     */
+    public static Command.Base fromNode(final JsonNode node) throws BankingInputException {
         String account = IOUtils.readStringChecked(node, "account");
         int startTimestamp = IOUtils.readIntChecked(node, "startTimestamp");
         int endTimestamp = IOUtils.readIntChecked(node, "endTimestamp");

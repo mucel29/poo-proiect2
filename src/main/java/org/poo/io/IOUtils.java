@@ -3,13 +3,23 @@ package org.poo.io;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.poo.system.exceptions.BankingInputException;
 
-public class IOUtils {
+public final class IOUtils {
 
     private IOUtils() {
 
     }
 
-    public static String readStringChecked(final JsonNode node, String fieldName) throws BankingInputException {
+    /**
+     * Reads a field and checks if it's a String
+     * @param node the node to read from
+     * @param fieldName the field to read
+     * @return the field's value
+     * @throws BankingInputException if the field is not present or it is not a String
+     */
+    public static String readStringChecked(
+            final JsonNode node,
+            final String fieldName
+    ) throws BankingInputException {
         JsonNode valueNode = node.get(fieldName);
         // Check node if it's null
         if (valueNode == null) {
@@ -26,7 +36,17 @@ public class IOUtils {
         return value;
     }
 
-    public static int readIntChecked(final JsonNode node, String fieldName) throws BankingInputException {
+    /**
+     * Reads a field and checks if it's an int
+     * @param node the node to read from
+     * @param fieldName the field to read
+     * @return the field's value
+     * @throws BankingInputException if the field is not present or it is not an int
+     */
+    public static int readIntChecked(
+            final JsonNode node,
+            final String fieldName
+    ) throws BankingInputException {
         JsonNode valueNode = node.get(fieldName);
         // Check node if it's null
         if (valueNode == null) {
@@ -40,7 +60,17 @@ public class IOUtils {
         return value;
     }
 
-    public static double readDoubleChecked(final JsonNode node, String fieldName) throws BankingInputException {
+    /**
+     * Reads a field and checks if it's a double
+     * @param node the node to read from
+     * @param fieldName the field to read
+     * @return the field's value
+     * @throws BankingInputException if the field is not present or it is not a double
+     */
+    public static double readDoubleChecked(
+            final JsonNode node,
+            final String fieldName
+    ) throws BankingInputException {
         JsonNode valueNode = node.get(fieldName);
         // Check node if it's null
         if (valueNode == null) {

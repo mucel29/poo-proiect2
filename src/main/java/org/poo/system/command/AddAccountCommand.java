@@ -14,12 +14,17 @@ import org.poo.utils.Utils;
 
 public class AddAccountCommand extends Command.Base {
 
-    private String email;
-    private String currency;
-    private Account.Type accountType;
-    private double interest;
+    private final String email;
+    private final String currency;
+    private final Account.Type accountType;
+    private final double interest;
 
-    public AddAccountCommand(String email, String currency, Account.Type accountType, double interest) {
+    public AddAccountCommand(
+            final String email,
+            final String currency,
+            final Account.Type accountType,
+            final double interest
+    ) {
         super(Command.Type.ADD_ACCOUNT);
         this.email = email;
         this.currency = currency;
@@ -27,24 +32,38 @@ public class AddAccountCommand extends Command.Base {
         this.interest = interest;
     }
 
+    /**
+     * @throws UserNotFoundException if the user could not be found
+     */
     @Override
     public void execute() throws UserNotFoundException {
 
         // Get user by using the email
         User targetUser = BankingSystem.getUserByEmail(this.email);
 
-        Account newAccount = new Account(targetUser, Utils.generateIBAN(), this.currency, this.accountType);
+        Account newAccount = new Account(
+                targetUser,
+                Utils.generateIBAN(),
+                this.currency,
+                this.accountType
+        );
         if (this.accountType == Account.Type.SAVINGS) {
             newAccount.setInterest(this.interest);
         }
 
         // Add the new account into the map and to the user
-        BankingSystem.getInstance().getAccountMap().put(newAccount.getIBAN(), targetUser);
+        BankingSystem.getInstance().getAccountMap().put(newAccount.getAccountIBAN(), targetUser);
         targetUser.getAccounts().add(newAccount);
         newAccount.getTransactions().add(new Transaction.Base("New account created", timestamp));
     }
 
-    public static AddAccountCommand fromNode(JsonNode node) throws BankingInputException {
+    /**
+     * Deserializes the given node into a `Command.Base` instance
+     * @param node the node to deserialize
+     * @return the command represented by the node
+     * @throws BankingInputException if the node is not a valid command
+     */
+    public static Command.Base fromNode(final JsonNode node) throws BankingInputException {
 
         String email = IOUtils.readStringChecked(node, "email");
         String currency = IOUtils.readStringChecked(node, "currency");

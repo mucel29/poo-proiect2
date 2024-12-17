@@ -5,50 +5,61 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Getter;
-import lombok.Setter;
+import org.poo.io.IOUtils;
 import org.poo.io.StateWriter;
 import org.poo.system.Transaction;
 import org.poo.system.exceptions.BankingInputException;
 import org.poo.system.exceptions.OwnershipException;
 import org.poo.utils.NodeConvertable;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Getter
-@Setter
 public class User implements NodeConvertable {
-    private String firstName;
-    private String lastName;
-    private String email;
+    private final String firstName;
+    private final String lastName;
+    private final String email;
 
     private final List<Account> accounts = new ArrayList<>();
 
-    public User(String firstName, String lastName, String email) {
+    public User(
+            final String firstName,
+            final String lastName,
+            final String email
+    ) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
     }
 
+    /**
+     * Reads a user
+     * @param node the JSON node representing the user
+     * @return the deserialized node as an `User`
+     * @throws BankingInputException if the node could not be deserialized to an `User` instance
+     */
     public static User read(final JsonNode node) throws BankingInputException {
         if (!node.isObject()) {
             throw new BankingInputException("User node is not an object");
         }
 
-        JsonNode firstNameField = node.get("firstName");
-        JsonNode lastNameField = node.get("lastName");
-        JsonNode emailField = node.get("email");
+        String firstNameField = IOUtils.readStringChecked(node, "firstName");
+        String lastNameField = IOUtils.readStringChecked(node, "lastName");
+        String emailField = IOUtils.readStringChecked(node, "email");
 
-        if (firstNameField.asText().isEmpty() || lastNameField.asText().isEmpty() || emailField.asText().isEmpty()) {
-            throw new BankingInputException("The user is missing a field:\n" + node.toPrettyString());
-        }
-
-        return new User(firstNameField.asText(), lastNameField.asText(), emailField.asText());
+        return new User(firstNameField, lastNameField, emailField);
     }
 
+    /**
+     * Reads an array of users
+     * @param node the node containing the users
+     * @return a List of deserialized `User` instances
+     * @throws BankingInputException if the given node is not an array
+     */
     public static List<User> readArray(final JsonNode node) throws BankingInputException {
         if (!node.isArray()) {
             throw new BankingInputException("User list is not an array");
@@ -61,7 +72,9 @@ public class User implements NodeConvertable {
             try {
                 userList.add(read(user));
             } catch (BankingInputException e) {
-                // If the user could not be read, continue reading the other users, it's not a critical failing point
+                // If the user could not be read,
+                // continue reading the other users,
+                // it's not a critical failing point
                 e.printStackTrace();
             }
         }
@@ -69,14 +82,34 @@ public class User implements NodeConvertable {
         return userList;
     }
 
-    public Account getAccount(String IBAN) throws OwnershipException {
+    /**
+     * Finds an account owned by this user
+     * @param account the account number to search for
+     * @return the account instance associated with the IBAN
+     * @throws OwnershipException if the queried account is not owned by this user
+     */
+    public Account getAccount(final String account) throws OwnershipException {
         try {
-            return this.accounts.stream().filter(account -> account.getIBAN().equals(IBAN)).toList().getFirst();
+            return this.accounts
+                    .stream()
+                    .filter(a -> a.getAccountIBAN().equals(account))
+                    .toList()
+                    .getFirst();
         } catch (NoSuchElementException e) {
-            throw new OwnershipException("User `" + this.email + "` does not own an account with the IBAN `" + IBAN + "`");
+            throw new OwnershipException(
+                    "User `"
+                            + this.email
+                            + "` does not own an account with the IBAN `"
+                            + account
+                            + "`"
+            );
         }
     }
 
+    /**
+     * Aggregates all the accounts' transactions
+     * @return a list containing all the transactions belonging to this user
+     */
     public List<Transaction> getTransactions() {
         return accounts
                 .stream()
@@ -86,15 +119,38 @@ public class User implements NodeConvertable {
 
     }
 
+    /**
+     * @param obj the other object to compare with
+     * @return whether this instance and obj are equal
+     */
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (obj instanceof User other) {
-            return firstName.equals(other.firstName) && lastName.equals(other.lastName) && email.equals(other.email) && accounts.equals(other.accounts);
+            return firstName.equals(other.firstName)
+                    && lastName.equals(other.lastName)
+                    && email.equals(other.email)
+                    && accounts.equals(other.accounts);
         }
 
         return false;
     }
 
+    /**
+     * @return the user's hash
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(
+                firstName,
+                lastName,
+                email,
+                accounts
+        );
+    }
+
+    /**
+     * @return the JSON representation of the Card
+     */
     @Override
     public ObjectNode toNode() {
         ObjectNode root = StateWriter.getMapper().createObjectNode();

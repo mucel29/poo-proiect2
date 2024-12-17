@@ -12,24 +12,35 @@ import org.poo.system.user.Account;
 public class MinBalanceCommand extends Command.Base {
 
     private final double amount;
-    private final String IBAN;
+    private final String account;
 
-    public MinBalanceCommand(String IBAN, double amount) {
+    public MinBalanceCommand(
+            final String account,
+            final double amount
+    ) {
         super(Command.Type.SET_MIN_BALANCE);
         this.amount = amount;
-        this.IBAN = IBAN;
+        this.account = account;
     }
 
+    /**
+     * @throws OwnershipException if no user owns the given account
+     */
     @Override
     public void execute() throws UserNotFoundException, OwnershipException {
-        Account targetAccount = BankingSystem.getAccount(IBAN);
+        Account targetAccount = BankingSystem.getAccount(account);
         targetAccount.setMinBalance(amount);
     }
-
-    public static MinBalanceCommand fromNode(final JsonNode node) throws BankingInputException {
+    /**
+     * Deserializes the given node into a `Command.Base` instance
+     * @param node the node to deserialize
+     * @return the command represented by the node
+     * @throws BankingInputException if the node is not a valid command
+     */
+    public static Command.Base fromNode(final JsonNode node) throws BankingInputException {
         double amount = IOUtils.readDoubleChecked(node, "amount");
         String account = IOUtils.readStringChecked(node, "account");
-        
+
         return new MinBalanceCommand(account, amount);
     }
 }

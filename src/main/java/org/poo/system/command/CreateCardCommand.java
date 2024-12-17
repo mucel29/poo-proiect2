@@ -21,7 +21,11 @@ public class CreateCardCommand extends Command.Base {
     private String account;
     private String email;
 
-    public CreateCardCommand(Card.Type cardType, String account, String email) {
+    public CreateCardCommand(
+            final Card.Type cardType,
+            final String account,
+            final String email
+    ) {
         super(cardType.command());
         this.cardType = cardType;
         this.account = account;
@@ -29,7 +33,12 @@ public class CreateCardCommand extends Command.Base {
     }
 
     // Package private constructor
-    CreateCardCommand(Card.Type cardType, String account, String email, int timestamp) {
+    CreateCardCommand(
+            final Card.Type cardType,
+            final String account,
+            final String email,
+            final int timestamp
+    ) {
         super(cardType.command());
         this.cardType = cardType;
         this.account = account;
@@ -37,11 +46,11 @@ public class CreateCardCommand extends Command.Base {
         this.timestamp = timestamp;
     }
 
-    public CreateCardCommand()
-    {
-        super(Command.Type.CREATE_CARD);
-    }
 
+    /**
+     * @throws UserNotFoundException if no user exists with the given email
+     * @throws OwnershipException if the given account is not owned by the given user
+     */
     @Override
     public void execute() throws UserNotFoundException, OwnershipException {
         super.command = this.cardType.command();
@@ -57,13 +66,22 @@ public class CreateCardCommand extends Command.Base {
                 new Transaction.CardOperation("New card created", timestamp)
                         .setCard(newCard.getCardNumber())
                         .setCardHolder(targetUser.getEmail())
-                        .setAccount(targetAccount.getIBAN())
+                        .setAccount(targetAccount.getAccountIBAN())
         );
 
         targetAccount.getCards().add(newCard);
     }
 
-    public static CreateCardCommand fromNode(final JsonNode node, Card.Type cardType) throws BankingInputException {
+    /**
+     * Deserializes the given node into a `Command.Base` instance
+     * @param node the node to deserialize
+     * @return the command represented by the node
+     * @throws BankingInputException if the node is not a valid command
+     */
+    public static Command.Base fromNode(
+            final JsonNode node,
+            final Card.Type cardType
+    ) throws BankingInputException {
         String email = IOUtils.readStringChecked(node, "email");
         String account = IOUtils.readStringChecked(node, "account");
 

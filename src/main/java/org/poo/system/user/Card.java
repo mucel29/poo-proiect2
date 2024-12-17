@@ -15,6 +15,10 @@ public class Card implements NodeConvertable {
         CLASSIC,
         ONE_TIME;
 
+        /**
+         * Retrieves the command type corresponding to the card's type
+         * @return `Command.Type` corresponding to the card type
+         */
         public Command.Type command() {
             return switch (this) {
                 case CLASSIC -> Command.Type.CREATE_CARD;
@@ -29,12 +33,19 @@ public class Card implements NodeConvertable {
     private String cardNumber;
     private boolean status = true;
 
-    public Card(Account account, Type cardType, String cardNumber) {
+    public Card(
+            final Account account,
+            final Type cardType,
+            final String cardNumber
+    ) {
         this.account = account;
         this.cardType = cardType;
         this.cardNumber = cardNumber;
     }
 
+    /**
+     * @return the JSON representation of the Card
+     */
     @Override
     public ObjectNode toNode() {
         ObjectNode root = StateWriter.getMapper().createObjectNode();

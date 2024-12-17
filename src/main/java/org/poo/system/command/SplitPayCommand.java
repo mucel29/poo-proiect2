@@ -6,11 +6,11 @@ import org.poo.system.BankingSystem;
 import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.BankingInputException;
+import org.poo.system.exceptions.OwnershipException;
 import org.poo.system.exchange.Exchange;
 import org.poo.system.user.Account;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,23 +21,34 @@ public class SplitPayCommand extends Command.Base {
     private final String currency;
     private final double totalAmount;
 
-    public SplitPayCommand(List<String> accounts, String currency, double totalAmount) {
+    public SplitPayCommand(
+            final List<String> accounts,
+            final String currency,
+            final double totalAmount
+    ) {
         super(Type.SPLIT_PAYMENT);
         this.accounts.addAll(accounts);
         this.currency = currency;
         this.totalAmount = totalAmount;
     }
 
+    /**
+     * @throws OwnershipException if all the accounts aren't owned by a user
+     */
     @Override
-    public void execute() {
-        // TODO: feedback, multiple accounts could have insufficient funds!
+    public void execute() throws OwnershipException {
         double amount = totalAmount / accounts.size();
         List<Account> targetAccounts = accounts.stream().map(BankingSystem::getAccount).toList();
         Map<Account, Double> deducted = new ConcurrentHashMap<>();
 
         Transaction.SplitPayment transaction =
                 new Transaction.SplitPayment(
-                        "Split payment of " + String.format("%.2f", totalAmount) + " " + currency, timestamp
+
+                        "Split payment of "
+                                + String.format("%.2f", totalAmount)
+                                + " "
+                                + currency,
+                        timestamp
                 )
                         .setAmount(amount)
                         .setCurrency(currency)
@@ -52,7 +63,11 @@ public class SplitPayCommand extends Command.Base {
 
             double localAmount = amount * Exchange.getRate(currency, account.getCurrency());
             if (account.getFunds() < localAmount) {
-                transaction.setError("Account " + account.getIBAN() + " has insufficient funds for a split payment.");
+                transaction.setError(
+                        "Account "
+                                + account.getAccountIBAN()
+                                + " has insufficient funds for a split payment."
+                );
                 return;
             }
 
@@ -69,7 +84,13 @@ public class SplitPayCommand extends Command.Base {
         });
     }
 
-    public static SplitPayCommand fromNode(final JsonNode node) throws BankingInputException {
+    /**
+     * Deserializes the given node into a `Command.Base` instance
+     * @param node the node to deserialize
+     * @return the command represented by the node
+     * @throws BankingInputException if the node is not a valid command
+     */
+    public static Command.Base fromNode(final JsonNode node) throws BankingInputException {
         JsonNode accountsNode = node.get("accounts");
         if (accountsNode == null || !accountsNode.isArray()) {
             throw new BankingInputException("accounts must be an array");
