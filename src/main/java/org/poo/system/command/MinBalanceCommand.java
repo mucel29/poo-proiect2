@@ -24,6 +24,7 @@ public class MinBalanceCommand extends Command.Base {
     }
 
     /**
+     * {@inheritDoc}
      * @throws OwnershipException if no user owns the given account
      */
     @Override
@@ -32,7 +33,7 @@ public class MinBalanceCommand extends Command.Base {
         targetAccount.setMinBalance(amount);
     }
     /**
-     * Deserializes the given node into a `Command.Base` instance
+     * Deserializes the given node into a {@code Command.Base} instance
      * @param node the node to deserialize
      * @return the command represented by the node
      * @throws BankingInputException if the node is not a valid command

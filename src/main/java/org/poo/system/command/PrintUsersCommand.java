@@ -10,6 +10,7 @@ public class PrintUsersCommand extends Command.Base {
     }
 
     /**
+     * {@inheritDoc}
      */
     @Override
     public void execute() {

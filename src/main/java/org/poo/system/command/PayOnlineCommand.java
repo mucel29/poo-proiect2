@@ -8,7 +8,6 @@ import org.poo.system.exceptions.ExchangeException;
 import org.poo.system.exceptions.OperationException;
 import org.poo.system.exceptions.OwnershipException;
 import org.poo.system.exceptions.UserNotFoundException;
-import org.poo.system.exchange.Exchange;
 import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
 import org.poo.system.user.Account;
@@ -42,6 +41,7 @@ public class PayOnlineCommand extends Command.Base {
     }
 
     /**
+     * {@inheritDoc}
      * @throws UserNotFoundException if the given user does not exist
      * @throws OwnershipException if the given account is not owned by the given user
      * @throws ExchangeException if no exchange from the account's currency
@@ -77,7 +77,10 @@ public class PayOnlineCommand extends Command.Base {
             throw new OperationException("Card " + cardNumber + " is frozen");
         }
 
-        double deducted = amount * Exchange.getRate(currency, targetAccount.getCurrency());
+        double deducted = amount * BankingSystem.getExchangeProvider().getRate(
+                currency,
+                targetAccount.getCurrency()
+        );
 
         if (targetAccount.getFunds() < deducted) {
             targetAccount.getTransactions().add(
@@ -136,7 +139,7 @@ public class PayOnlineCommand extends Command.Base {
     }
 
     /**
-     * Deserializes the given node into a `Command.Base` instance
+     * Deserializes the given node into a {@code Command.Base} instance
      * @param node the node to deserialize
      * @return the command represented by the node
      * @throws BankingInputException if the node is not a valid command
@@ -149,7 +152,7 @@ public class PayOnlineCommand extends Command.Base {
         String description = IOUtils.readStringChecked(node, "description");
         String commerciant = IOUtils.readStringChecked(node, "commerciant");
 
-        String currency = Exchange.verifyCurrency(
+        String currency = BankingSystem.getExchangeProvider().verifyCurrency(
                 IOUtils.readStringChecked(node, "currency")
         );
 

@@ -7,7 +7,9 @@ import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.BankingInputException;
 import org.poo.system.exceptions.OwnershipException;
 import org.poo.system.exceptions.UserNotFoundException;
+import org.poo.system.exchange.ComposedExchangeProvider;
 import org.poo.system.exchange.Exchange;
+import org.poo.system.exchange.ExchangeProvider;
 import org.poo.system.user.Account;
 import org.poo.system.user.Card;
 import org.poo.system.user.User;
@@ -32,11 +34,17 @@ public final class BankingSystem {
     private final Map<String, User> accountMap = new HashMap<>();
     private final Map<String, String> aliasMap = new HashMap<>();
 
+    private ExchangeProvider exchangeProvider;
+
     private BankingSystem() {
 
     }
 
     private static BankingSystem instance;
+
+    private void resetExchangeProvider() {
+        exchangeProvider = new ComposedExchangeProvider();
+    }
 
     /**
      * @return the singleton instance
@@ -59,7 +67,7 @@ public final class BankingSystem {
         users.clear();
         commands.clear();
         accountMap.clear();
-        Exchange.reset();
+        resetExchangeProvider();
 
         Utils.resetRandom();
     }
@@ -94,9 +102,11 @@ public final class BankingSystem {
         if (exchangeNode == null) {
             throw new BankingInputException("No exchange rates found");
         }
-        // Add exchanges from input
-        Exchange.registerExchanges(exchangeNode);
-        Exchange.printRates();
+
+        getExchangeProvider().registerExchanges(
+                Exchange.readArray(exchangeNode)
+        );
+        getExchangeProvider().printRates();
 
 
 
@@ -121,6 +131,10 @@ public final class BankingSystem {
                 System.err.println("[" + testNumber + "] Caught exception: " + e.getMessage());
             }
         }
+    }
+
+    public static ExchangeProvider getExchangeProvider() {
+        return instance.exchangeProvider;
     }
 
     /**

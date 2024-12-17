@@ -25,6 +25,7 @@ public class ChangeInterestCommand extends Command.Base {
     }
 
     /**
+     * {@inheritDoc}
      * @throws UserNotFoundException if no user owns the given account
      * @throws OperationException if the account is not a savings one
      */
@@ -50,7 +51,7 @@ public class ChangeInterestCommand extends Command.Base {
     }
 
     /**
-     * Deserializes the given node into a `Command.Base` instance
+     * Deserializes the given node into a {@code Command.Base} instance
      * @param node the node to deserialize
      * @return the command represented by the node
      * @throws BankingInputException if the node is not a valid command

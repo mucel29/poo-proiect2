@@ -39,8 +39,9 @@ public class User implements NodeConvertable {
     /**
      * Reads a user
      * @param node the JSON node representing the user
-     * @return the deserialized node as an `User`
-     * @throws BankingInputException if the node could not be deserialized to an `User` instance
+     * @return the deserialized node as an {@code User}
+     * @throws BankingInputException if the node could not be deserialized to an
+     * {@code User} instance
      */
     public static User read(final JsonNode node) throws BankingInputException {
         if (!node.isObject()) {
@@ -57,7 +58,7 @@ public class User implements NodeConvertable {
     /**
      * Reads an array of users
      * @param node the node containing the users
-     * @return a List of deserialized `User` instances
+     * @return a List of deserialized {@code User} instances
      * @throws BankingInputException if the given node is not an array
      */
     public static List<User> readArray(final JsonNode node) throws BankingInputException {
@@ -149,7 +150,7 @@ public class User implements NodeConvertable {
     }
 
     /**
-     * @return the JSON representation of the Card
+     * @return the JSON representation of the {@code User}
      */
     @Override
     public ObjectNode toNode() {

@@ -3,7 +3,6 @@ package org.poo.main;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.poo.checker.Checker;
 import org.poo.checker.CheckerConstants;
-import org.poo.checker.Checkstyle;
 import org.poo.io.StateWriter;
 import org.poo.system.BankingSystem;
 

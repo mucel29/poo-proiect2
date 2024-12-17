@@ -7,7 +7,6 @@ import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.BankingInputException;
 import org.poo.system.exceptions.OwnershipException;
-import org.poo.system.exchange.Exchange;
 import org.poo.system.user.Account;
 
 import java.util.ArrayList;
@@ -33,6 +32,7 @@ public class SplitPayCommand extends Command.Base {
     }
 
     /**
+     * {@inheritDoc}
      * @throws OwnershipException if all the accounts aren't owned by a user
      */
     @Override
@@ -61,7 +61,10 @@ public class SplitPayCommand extends Command.Base {
 //                return;
 //            }
 
-            double localAmount = amount * Exchange.getRate(currency, account.getCurrency());
+            double localAmount = amount * BankingSystem.getExchangeProvider().getRate(
+                    currency,
+                    account.getCurrency()
+            );
             if (account.getFunds() < localAmount) {
                 transaction.setError(
                         "Account "
@@ -85,7 +88,7 @@ public class SplitPayCommand extends Command.Base {
     }
 
     /**
-     * Deserializes the given node into a `Command.Base` instance
+     * Deserializes the given node into a {@code Command.Base} instance
      * @param node the node to deserialize
      * @return the command represented by the node
      * @throws BankingInputException if the node is not a valid command

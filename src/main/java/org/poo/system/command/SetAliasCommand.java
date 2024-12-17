@@ -26,6 +26,7 @@ public class SetAliasCommand extends Command.Base {
     }
 
     /**
+     * {@inheritDoc}
      */
     @Override
     public void execute() {
@@ -34,7 +35,7 @@ public class SetAliasCommand extends Command.Base {
     }
 
     /**
-     * Deserializes the given node into a `Command.Base` instance
+     * Deserializes the given node into a {@code Command.Base} instance
      * @param node the node to deserialize
      * @return the command represented by the node
      * @throws BankingInputException if the node is not a valid command
@@ -42,7 +43,7 @@ public class SetAliasCommand extends Command.Base {
     public static Command.Base fromNode(final JsonNode node) throws BankingInputException {
         String alias = IOUtils.readStringChecked(node, "alias");
         String email = IOUtils.readStringChecked(node, "email");
-        String account = IOUtils.readStringChecked(node, "IBAN");
+        String account = IOUtils.readStringChecked(node, "account");
 
         return new SetAliasCommand(alias, email, account);
     }

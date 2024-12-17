@@ -29,10 +29,10 @@ public class Account implements NodeConvertable {
         }
 
         /**
-         * Converts a String to an `Account.Type`
+         * Converts a String to an {@code Account.Type}
          * @param label the string to convert
-         * @return the corresponding `Account.Type`
-         * @throws BankingInputException if the label can't be converted to an `Account.Type`
+         * @return the corresponding {@code Account.Type}
+         * @throws BankingInputException if the label can't be converted to an {@code Account.Type}
          */
         public static Account.Type fromString(final String label) throws BankingInputException {
             try {

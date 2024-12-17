@@ -32,6 +32,7 @@ public class SpendingReportCommand extends Command.Base {
     }
 
     /**
+     * {@inheritDoc}
      */
     @Override
     public void execute() {
@@ -81,12 +82,7 @@ public class SpendingReportCommand extends Command.Base {
                     );
                 }
             }
-            /*
-            "commerciants" : [ {
-              "commerciant" : "Zara",
-              "total" : 285.0
-            } ]
-             */
+
             ArrayNode comArr = root.putArray("commerciants");
             commerciants
                     .keySet()
@@ -105,7 +101,7 @@ public class SpendingReportCommand extends Command.Base {
     }
 
     /**
-     * Deserializes the given node into a `Command.Base` instance
+     * Deserializes the given node into a {@code Command.Base} instance
      * @param node the node to deserialize
      * @return the command represented by the node
      * @throws BankingInputException if the node is not a valid command

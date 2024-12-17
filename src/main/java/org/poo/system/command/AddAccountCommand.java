@@ -3,7 +3,6 @@ package org.poo.system.command;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.poo.io.IOUtils;
 import org.poo.system.BankingSystem;
-import org.poo.system.exchange.Exchange;
 import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.BankingInputException;
@@ -33,6 +32,7 @@ public class AddAccountCommand extends Command.Base {
     }
 
     /**
+     * {@inheritDoc}
      * @throws UserNotFoundException if the user could not be found
      */
     @Override
@@ -58,7 +58,7 @@ public class AddAccountCommand extends Command.Base {
     }
 
     /**
-     * Deserializes the given node into a `Command.Base` instance
+     * Deserializes the given node into a {@code Command.Base} instance
      * @param node the node to deserialize
      * @return the command represented by the node
      * @throws BankingInputException if the node is not a valid command
@@ -68,7 +68,7 @@ public class AddAccountCommand extends Command.Base {
         String email = IOUtils.readStringChecked(node, "email");
         String currency = IOUtils.readStringChecked(node, "currency");
 
-        Exchange.registerCurrency(currency);
+        BankingSystem.getExchangeProvider().registerCurrency(currency);
 
         Account.Type accountType = Account.Type.fromString(
                 IOUtils.readStringChecked(node, "accountType")

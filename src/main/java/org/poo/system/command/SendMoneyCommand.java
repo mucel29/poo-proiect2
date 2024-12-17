@@ -8,7 +8,6 @@ import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.BankingInputException;
 import org.poo.system.exceptions.OperationException;
 import org.poo.system.exceptions.OwnershipException;
-import org.poo.system.exchange.Exchange;
 import org.poo.system.user.Account;
 import org.poo.utils.Utils;
 
@@ -34,9 +33,13 @@ public class SendMoneyCommand extends Command.Base {
 
 
     /**
+     * {@inheritDoc}
      * @throws OwnershipException if no user owns the sender or receiver accounts
-     * @throws OperationException - if the sender is an alias instead of an account
-     * - if the sender doesn't have enough funds
+     * @throws OperationException
+     * <ul>
+     *      <li> if the sender is an alias instead of an account </li>
+     *      <li> if the sender doesn't have enough funds </li>
+     * </ul>
      */
     @Override
     public void execute() throws OwnershipException, OperationException {
@@ -49,7 +52,7 @@ public class SendMoneyCommand extends Command.Base {
                 ? BankingSystem.getAccount(receiver)
                 : BankingSystem.getByAlias(receiver);
 
-        double convertedAmount = amount * Exchange.getRate(
+        double convertedAmount = amount * BankingSystem.getExchangeProvider().getRate(
                 senderAccount.getCurrency(),
                 receiverAccount.getCurrency()
         );
@@ -115,7 +118,7 @@ public class SendMoneyCommand extends Command.Base {
     }
 
     /**
-     * Deserializes the given node into a `Command.Base` instance
+     * Deserializes the given node into a {@code Command.Base} instance
      * @param node the node to deserialize
      * @return the command represented by the node
      * @throws BankingInputException if the node is not a valid command

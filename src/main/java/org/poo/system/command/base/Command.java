@@ -120,10 +120,10 @@ public interface Command {
         private final Function<JsonNode, Command.Base> commandSupplier;
 
         /**
-         * Converts a String to an `Command.Type`
+         * Converts a {@code String} to an {@code Command.Type}
          * @param label the string to convert
-         * @return the corresponding `Command.Type`
-         * @throws BankingInputException if the label can't be converted to an `Command.Type`
+         * @return the corresponding {@code Command.Type}
+         * @throws BankingInputException if the label can't be converted to an {@code Command.Type}
          */
         public static Type fromString(final String label) throws BankingInputException {
             try {
@@ -150,7 +150,7 @@ public interface Command {
         /**
          * Deserializes a JsonNode to a command matching the enum instance
          * @param node the JSON representation of the command
-         * @return a deserialized `Command.Base` instance
+         * @return a deserialized {@code Command.Base} instance
          */
         public Command.Base parse(final JsonNode node) {
             return commandSupplier.apply(node);
@@ -160,8 +160,9 @@ public interface Command {
     /**
      * Reads a command
      * @param node the JSON node representing the command
-     * @return the deserialized node as a `Command` instance
-     * @throws BankingInputException if the node could not be deserialized to an `Command` instance
+     * @return the deserialized node as a {@code Command} instance
+     * @throws BankingInputException if the node
+     * could not be deserialized to an {@code Command} instance
      */
     static Command read(final JsonNode node) throws BankingInputException {
         if (!node.isObject()) {
@@ -183,7 +184,7 @@ public interface Command {
     /**
      * Reads an array of commands
      * @param node the node containing the commands
-     * @return a List of deserialized `Command` instances
+     * @return a List of deserialized {@code Command} instances
      * @throws BankingInputException if the given node is not an array
      */
     static List<Command> readArray(final JsonNode node) throws BankingInputException {
@@ -219,10 +220,10 @@ public interface Command {
         }
 
         /**
-         * Produces a `JsonNode` with the command name and timestamp
-         * and a `output` object to be populated by the given consumer
+         * Produces a {@code JsonNode} with the command name and timestamp
+         * and a {@code output} object to be populated by the given consumer
          * The node is added to the StateWriter's buffer to be printed
-         * @param consumer the functional interface to fill the `output` object
+         * @param consumer the functional interface to fill the {@code output} object
          */
         protected void output(final Consumer<ObjectNode> consumer) {
             ObjectNode root = StateWriter.getMapper().createObjectNode();
@@ -233,10 +234,10 @@ public interface Command {
         }
 
         /**
-         * Produces a `JsonNode` with the command name and timestamp
-         * and a `output` array to be populated by the given consumer
+         * Produces a {@code JsonNode} with the command name and timestamp
+         * and a {@code output} array to be populated by the given consumer
          * The node is added to the StateWriter's buffer to be printed
-         * @param consumer the functional interface to fill the `output` array
+         * @param consumer the functional interface to fill the {@code output} array
          */
         protected void outputArray(final Consumer<ArrayNode> consumer) {
             ObjectNode root = StateWriter.getMapper().createObjectNode();

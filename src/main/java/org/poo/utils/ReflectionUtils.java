@@ -18,9 +18,9 @@ public final class ReflectionUtils {
     }
 
     /**
-     * Adds a given `Field` to an `ObjectNode`
-     * @param root the ObjectNode
-     * @param field the Field
+     * Adds a given {@code Field} to an {@code ObjectNode}
+     * @param root the {@code ObjectNode}
+     * @param field the {@code Field}
      * @param caller the Declaring object of the field
      */
     public static void addField(final ObjectNode root, final Field field, final Object caller) {
@@ -60,12 +60,12 @@ public final class ReflectionUtils {
 
     /**
      * Copy fields from one object to another.
-     * `to` and `from` are needed because the
+     * {@code to} and {@code from} are needed because the
      * caller can specify fields from the object's superclass
      * @param from the fields to copy from
      * @param to the fields to copy to
-     * @param caller the object to which `from` belongs
-     * @param toObject the object to which `to` belongs
+     * @param caller the object to which {@code from}  belongs
+     * @param toObject the object to which {@code to} belongs
      */
     public static void copyFields(
             final Field[] from,
@@ -99,7 +99,7 @@ public final class ReflectionUtils {
      * Find an object's field
      * @param fieldName the name of the field
      * @param caller the owner of the field
-     * @return the Field if it can be accessed or null
+     * @return the {@code Field} if it can be accessed or {@code null}
      */
     public static Field findField(final String fieldName, final Object caller) {
         try {

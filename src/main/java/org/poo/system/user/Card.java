@@ -17,7 +17,7 @@ public class Card implements NodeConvertable {
 
         /**
          * Retrieves the command type corresponding to the card's type
-         * @return `Command.Type` corresponding to the card type
+         * @return {@code Command.Type} corresponding to the card type
          */
         public Command.Type command() {
             return switch (this) {
@@ -44,7 +44,7 @@ public class Card implements NodeConvertable {
     }
 
     /**
-     * @return the JSON representation of the Card
+     * @return the JSON representation of the {@code Card}
      */
     @Override
     public ObjectNode toNode() {
