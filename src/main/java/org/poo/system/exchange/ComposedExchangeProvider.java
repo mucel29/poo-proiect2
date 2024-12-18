@@ -1,6 +1,7 @@
 package org.poo.system.exchange;
 
-import org.poo.system.exceptions.BankingInputException;
+import org.poo.system.BankingSystem;
+import org.poo.system.exceptions.InputException;
 import org.poo.utils.Graph;
 
 import java.util.ArrayList;
@@ -85,12 +86,12 @@ public final class ComposedExchangeProvider implements ExchangeProvider {
      * {@inheritDoc}
      */
     @Override
-    public String verifyCurrency(final String currency) throws BankingInputException {
+    public String verifyCurrency(final String currency) throws InputException {
         if (registeredCurrencies.contains(currency)) {
             return currency;
         }
 
-        throw new BankingInputException("Invalid currency: " + currency);
+        throw new InputException("Invalid currency: " + currency);
     }
 
     /**
@@ -116,11 +117,11 @@ public final class ComposedExchangeProvider implements ExchangeProvider {
      */
     @Override
     public void printRates() {
-        System.out.println("Composed rates: ");
+        BankingSystem.log("Composed rates: ");
         exchanges
                 .parallelStream()
                 .forEach(
-                        exchange -> System.out.println(
+                        exchange -> BankingSystem.log(
                                 exchange.from()
                                         + " -> "
                                         + exchange.to()

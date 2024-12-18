@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import lombok.Getter;
+import org.poo.system.BankingSystem;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,7 +44,7 @@ public final class StateWriter {
      * @throws IOException in case of an IO error
      */
     public static void dump(final File f) throws IOException {
-        System.out.println("Dumping to " + f.getAbsolutePath());
+        BankingSystem.log("Dumping to " + f.getAbsolutePath());
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
         writer.writeValue(f, outputNodes);
     }

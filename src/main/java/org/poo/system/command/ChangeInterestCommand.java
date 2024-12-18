@@ -5,9 +5,10 @@ import org.poo.io.IOUtils;
 import org.poo.system.BankingSystem;
 import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
-import org.poo.system.exceptions.BankingInputException;
+import org.poo.system.exceptions.InputException;
 import org.poo.system.exceptions.OperationException;
 import org.poo.system.exceptions.UserNotFoundException;
+import org.poo.system.exceptions.handlers.CommandDescriptionHandler;
 import org.poo.system.user.Account;
 
 public class ChangeInterestCommand extends Command.Base {
@@ -33,11 +34,11 @@ public class ChangeInterestCommand extends Command.Base {
     public void execute() throws UserNotFoundException, OperationException {
         Account targetAccount = BankingSystem.getStorageProvider().getAccountByIban(account);
         if (targetAccount.getAccountType() != Account.Type.SAVINGS) {
-            super.output((root) -> {
-                root.put("description", "This is not a savings account");
-                root.put("timestamp", timestamp);
-            });
-            throw new OperationException("Target account is not a savings account");
+            throw new OperationException(
+                    "This is not a savings account",
+                    null,
+                    new CommandDescriptionHandler(this)
+            );
         }
 
         targetAccount
@@ -54,9 +55,9 @@ public class ChangeInterestCommand extends Command.Base {
      * Deserializes the given node into a {@code Command.Base} instance
      * @param node the node to deserialize
      * @return the command represented by the node
-     * @throws BankingInputException if the node is not a valid command
+     * @throws InputException if the node is not a valid command
      */
-    public static Command.Base fromNode(final JsonNode node) throws BankingInputException {
+    public static Command.Base fromNode(final JsonNode node) throws InputException {
         String account = IOUtils.readStringChecked(node, "account");
         double newInterestRate = IOUtils.readDoubleChecked(node, "interestRate");
 

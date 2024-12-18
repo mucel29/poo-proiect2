@@ -4,7 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import org.poo.system.command.base.Command;
-import org.poo.system.exceptions.BankingInputException;
+import org.poo.system.exceptions.BankingException;
+import org.poo.system.exceptions.InputException;
 import org.poo.system.exchange.ComposedExchangeProvider;
 import org.poo.system.exchange.Exchange;
 import org.poo.system.exchange.ExchangeProvider;
@@ -26,6 +27,8 @@ public final class BankingSystem {
 
     private ExchangeProvider exchangeProvider;
     private StorageProvider storageProvider;
+
+    public static final boolean VERBOSE_LOGGING = false;
 
     private BankingSystem() {
 
@@ -79,7 +82,7 @@ public final class BankingSystem {
         // Read users
         JsonNode usersNode = root.get("users");
         if (usersNode == null) {
-            throw new BankingInputException("No users found");
+            throw new InputException("No users found");
         }
         User.readArray(usersNode)
                 .forEach(user -> instance.storageProvider.registerUser(user));
@@ -87,7 +90,7 @@ public final class BankingSystem {
         // Read exchange rates
         JsonNode exchangeNode = root.get("exchangeRates");
         if (exchangeNode == null) {
-            throw new BankingInputException("No exchange rates found");
+            throw new InputException("No exchange rates found");
         }
 
         getExchangeProvider().registerExchanges(
@@ -100,7 +103,7 @@ public final class BankingSystem {
         // Read commands
         JsonNode commandsNode = root.get("commands");
         if (commandsNode == null) {
-            throw new BankingInputException("No commands found");
+            throw new InputException("No commands found");
         }
         instance.getCommands().addAll(Command.readArray(commandsNode));
 
@@ -113,11 +116,27 @@ public final class BankingSystem {
         for (Command command : instance.getCommands()) {
             try {
                 command.execute();
-            } catch (Exception e) {
-                // Todo: do some handling here ig
-                System.err.println("[" + testNumber + "] Caught exception: " + e.getMessage());
+            } catch (BankingException e) {
+                if (!e.handle()) {
+                    System.err.println(
+                            "[" + testNumber + "] Unhandled exception: " + e.getDetailedMessage()
+                    );
+                }
+
             }
         }
+    }
+
+    /**
+     * Prints a message if verbose logging is enabled
+     * @param message the message to print
+     */
+    public static void log(final String message) {
+        if (!VERBOSE_LOGGING) {
+            return;
+        }
+
+        System.out.println(message);
     }
 
     public static ExchangeProvider getExchangeProvider() {

@@ -23,7 +23,7 @@ import org.poo.system.command.SendMoneyCommand;
 import org.poo.system.command.SetAliasCommand;
 import org.poo.system.command.SpendingReportCommand;
 import org.poo.system.command.SplitPayCommand;
-import org.poo.system.exceptions.BankingInputException;
+import org.poo.system.exceptions.InputException;
 import org.poo.system.user.Card;
 
 import java.util.ArrayList;
@@ -123,9 +123,9 @@ public interface Command {
          * Converts a {@code String} to an {@code Command.Type}
          * @param label the string to convert
          * @return the corresponding {@code Command.Type}
-         * @throws BankingInputException if the label can't be converted to an {@code Command.Type}
+         * @throws InputException if the label can't be converted to an {@code Command.Type}
          */
-        public static Type fromString(final String label) throws BankingInputException {
+        public static Type fromString(final String label) throws InputException {
             try {
                 return Arrays
                         .stream(Command.Type.values())
@@ -133,7 +133,7 @@ public interface Command {
                         .toList()
                         .getFirst();
             } catch (NoSuchElementException e) {
-                throw new BankingInputException("Unknown command: " + label);
+                throw new InputException("Unknown command: " + label);
             }
         }
 
@@ -161,12 +161,12 @@ public interface Command {
      * Reads a command
      * @param node the JSON node representing the command
      * @return the deserialized node as a {@code Command} instance
-     * @throws BankingInputException if the node
+     * @throws InputException if the node
      * could not be deserialized to an {@code Command} instance
      */
-    static Command read(final JsonNode node) throws BankingInputException {
+    static Command read(final JsonNode node) throws InputException {
         if (!node.isObject()) {
-            throw new BankingInputException("Command node is not an object");
+            throw new InputException("Command node is not an object");
         }
 
         Command.Type type = Command.Type.fromString(
@@ -185,11 +185,11 @@ public interface Command {
      * Reads an array of commands
      * @param node the node containing the commands
      * @return a List of deserialized {@code Command} instances
-     * @throws BankingInputException if the given node is not an array
+     * @throws InputException if the given node is not an array
      */
-    static List<Command> readArray(final JsonNode node) throws BankingInputException {
+    static List<Command> readArray(final JsonNode node) throws InputException {
         if (!node.isArray()) {
-            throw new BankingInputException("Commands list is not an array");
+            throw new InputException("Commands list is not an array");
         }
 
         ArrayNode commands = (ArrayNode) node;
@@ -198,7 +198,7 @@ public interface Command {
         for (JsonNode commandNode : commands) {
             try {
                 commandsList.add(read(commandNode));
-            } catch (BankingInputException e) {
+            } catch (InputException e) {
                 // If the command could not be read,
                 // continue reading the other commands,
                 // it's not a critical failing point

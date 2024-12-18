@@ -2,8 +2,8 @@ package org.poo.system.exceptions;
 
 import org.poo.system.BankingSystem;
 
-public final class OwnershipException extends BankingException {
-    public OwnershipException(final String message) {
+public final class InputException extends BankingException {
+    public InputException(final String message) {
         super(message);
     }
 

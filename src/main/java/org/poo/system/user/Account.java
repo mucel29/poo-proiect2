@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.poo.io.StateWriter;
 import org.poo.system.Transaction;
-import org.poo.system.exceptions.BankingInputException;
+import org.poo.system.exceptions.InputException;
 import org.poo.utils.NodeConvertable;
 
 import java.util.ArrayList;
@@ -32,9 +32,9 @@ public class Account implements NodeConvertable {
          * Converts a String to an {@code Account.Type}
          * @param label the string to convert
          * @return the corresponding {@code Account.Type}
-         * @throws BankingInputException if the label can't be converted to an {@code Account.Type}
+         * @throws InputException if the label can't be converted to an {@code Account.Type}
          */
-        public static Account.Type fromString(final String label) throws BankingInputException {
+        public static Account.Type fromString(final String label) throws InputException {
             try {
                 return Arrays
                         .stream(Account.Type.values())
@@ -42,7 +42,7 @@ public class Account implements NodeConvertable {
                         .toList()
                         .getFirst();
             } catch (NoSuchElementException e) {
-                throw new BankingInputException("Unknown account type: " + label);
+                throw new InputException("Unknown account type: " + label);
             }
         }
 

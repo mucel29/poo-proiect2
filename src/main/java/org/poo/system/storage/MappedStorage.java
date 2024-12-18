@@ -201,6 +201,7 @@ public final class MappedStorage implements StorageProvider {
         }
 
         account.getOwner().getAccounts().remove(account);
+        account.getCards().forEach(card -> cards.remove(card.getCardNumber()));
         accounts.remove(account.getAccountIBAN());
     }
 

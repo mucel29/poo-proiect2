@@ -5,9 +5,11 @@ import org.poo.io.IOUtils;
 import org.poo.system.BankingSystem;
 import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
-import org.poo.system.exceptions.BankingInputException;
+import org.poo.system.exceptions.AliasException;
+import org.poo.system.exceptions.InputException;
 import org.poo.system.exceptions.OperationException;
 import org.poo.system.exceptions.OwnershipException;
+import org.poo.system.exceptions.handlers.TransactionHandler;
 import org.poo.system.user.Account;
 import org.poo.utils.Utils;
 
@@ -42,9 +44,9 @@ public class SendMoneyCommand extends Command.Base {
      * </ul>
      */
     @Override
-    public void execute() throws OwnershipException, OperationException {
+    public void execute() throws AliasException, OwnershipException, OperationException {
         if (!Utils.verifyIBAN(sender)) {
-            throw new OperationException("Invalid sender IBAN [can't use an user as alias]");
+            throw new AliasException("Invalid sender IBAN [can't use an user as alias]");
         }
 
         Account senderAccount = BankingSystem.getStorageProvider().getAccountByIban(sender);
@@ -58,13 +60,8 @@ public class SendMoneyCommand extends Command.Base {
         );
 
         if (senderAccount.getFunds() < amount) {
-            senderAccount
-                    .getTransactions()
-                    .add(new Transaction.Base(
-                            "Insufficient funds",
-                            timestamp
-                    ));
             throw new OperationException(
+                    "Insufficient funds",
                     "Not enough balance: "
                             + senderAccount.getFunds()
                             + " (wanted to send "
@@ -75,7 +72,8 @@ public class SendMoneyCommand extends Command.Base {
                             + convertedAmount
                             + " "
                             + receiverAccount.getCurrency()
-                            + "]"
+                            + "]",
+                    new TransactionHandler(senderAccount, timestamp)
             );
         }
 
@@ -97,7 +95,7 @@ public class SendMoneyCommand extends Command.Base {
                         .setTransferType(Transaction.TransferType.RECEIVED)
         );
 
-        System.out.println(
+        BankingSystem.log(
                 "Sent "
                         + amount
                         + " "
@@ -121,9 +119,9 @@ public class SendMoneyCommand extends Command.Base {
      * Deserializes the given node into a {@code Command.Base} instance
      * @param node the node to deserialize
      * @return the command represented by the node
-     * @throws BankingInputException if the node is not a valid command
+     * @throws InputException if the node is not a valid command
      */
-    public static Command.Base fromNode(final JsonNode node) throws BankingInputException {
+    public static Command.Base fromNode(final JsonNode node) throws InputException {
         String account = IOUtils.readStringChecked(node, "account");
         String receiver = IOUtils.readStringChecked(node, "receiver");
         double amount = IOUtils.readDoubleChecked(node, "amount");

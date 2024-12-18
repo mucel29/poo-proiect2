@@ -5,7 +5,7 @@ import org.poo.io.IOUtils;
 import org.poo.system.BankingSystem;
 import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
-import org.poo.system.exceptions.BankingInputException;
+import org.poo.system.exceptions.InputException;
 import org.poo.system.exceptions.OwnershipException;
 import org.poo.system.user.Account;
 
@@ -58,10 +58,6 @@ public class SplitPayCommand extends Command.Base {
 
         // Check if all accounts can pay and compute their deducted amount
         targetAccounts.forEach((account) -> {
-            // Stop evaluating if an error already occurred
-//            if (transaction.getError() != null) {
-//                return;
-//            }
 
             double localAmount = amount * BankingSystem.getExchangeProvider().getRate(
                     currency,
@@ -93,12 +89,12 @@ public class SplitPayCommand extends Command.Base {
      * Deserializes the given node into a {@code Command.Base} instance
      * @param node the node to deserialize
      * @return the command represented by the node
-     * @throws BankingInputException if the node is not a valid command
+     * @throws InputException if the node is not a valid command
      */
-    public static Command.Base fromNode(final JsonNode node) throws BankingInputException {
+    public static Command.Base fromNode(final JsonNode node) throws InputException {
         JsonNode accountsNode = node.get("accounts");
         if (accountsNode == null || !accountsNode.isArray()) {
-            throw new BankingInputException("accounts must be an array");
+            throw new InputException("accounts must be an array");
         }
         double amount = IOUtils.readDoubleChecked(node, "amount");
         String currency = IOUtils.readStringChecked(node, "currency");

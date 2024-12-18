@@ -5,7 +5,7 @@ import org.poo.io.IOUtils;
 import org.poo.system.BankingSystem;
 import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
-import org.poo.system.exceptions.BankingInputException;
+import org.poo.system.exceptions.InputException;
 import org.poo.system.exceptions.OwnershipException;
 import org.poo.system.user.Account;
 import org.poo.system.user.Card;
@@ -59,9 +59,9 @@ public class CheckCardCommand extends Command.Base {
      * Deserializes the given node into a {@code Command.Base} instance
      * @param node the node to deserialize
      * @return the command represented by the node
-     * @throws BankingInputException if the node is not a valid command
+     * @throws InputException if the node is not a valid command
      */
-    public static Command.Base fromNode(final JsonNode node) throws BankingInputException {
+    public static Command.Base fromNode(final JsonNode node) throws InputException {
         String cardNumber = IOUtils.readStringChecked(node, "cardNumber");
 
         return new CheckCardCommand(cardNumber);

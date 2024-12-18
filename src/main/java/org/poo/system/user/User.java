@@ -8,7 +8,7 @@ import lombok.Getter;
 import org.poo.io.IOUtils;
 import org.poo.io.StateWriter;
 import org.poo.system.Transaction;
-import org.poo.system.exceptions.BankingInputException;
+import org.poo.system.exceptions.InputException;
 import org.poo.system.exceptions.OwnershipException;
 import org.poo.utils.NodeConvertable;
 
@@ -40,12 +40,12 @@ public class User implements NodeConvertable {
      * Reads a user
      * @param node the JSON node representing the user
      * @return the deserialized node as an {@code User}
-     * @throws BankingInputException if the node could not be deserialized to an
+     * @throws InputException if the node could not be deserialized to an
      * {@code User} instance
      */
-    public static User read(final JsonNode node) throws BankingInputException {
+    public static User read(final JsonNode node) throws InputException {
         if (!node.isObject()) {
-            throw new BankingInputException("User node is not an object");
+            throw new InputException("User node is not an object");
         }
 
         String firstNameField = IOUtils.readStringChecked(node, "firstName");
@@ -59,11 +59,11 @@ public class User implements NodeConvertable {
      * Reads an array of users
      * @param node the node containing the users
      * @return a List of deserialized {@code User} instances
-     * @throws BankingInputException if the given node is not an array
+     * @throws InputException if the given node is not an array
      */
-    public static List<User> readArray(final JsonNode node) throws BankingInputException {
+    public static List<User> readArray(final JsonNode node) throws InputException {
         if (!node.isArray()) {
-            throw new BankingInputException("User list is not an array");
+            throw new InputException("User list is not an array");
         }
 
         ArrayNode users = (ArrayNode) node;
@@ -72,7 +72,7 @@ public class User implements NodeConvertable {
         for (JsonNode user : users) {
             try {
                 userList.add(read(user));
-            } catch (BankingInputException e) {
+            } catch (InputException e) {
                 // If the user could not be read,
                 // continue reading the other users,
                 // it's not a critical failing point

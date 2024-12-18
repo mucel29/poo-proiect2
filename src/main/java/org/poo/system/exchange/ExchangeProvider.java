@@ -1,6 +1,6 @@
 package org.poo.system.exchange;
 
-import org.poo.system.exceptions.BankingInputException;
+import org.poo.system.exceptions.InputException;
 
 import java.util.List;
 
@@ -30,9 +30,9 @@ public interface ExchangeProvider {
      *
      * @param currency the currency to verify
      * @return the currency string is it's valid
-     * @throws BankingInputException if the currency is not a registered currency
+     * @throws InputException if the currency is not a registered currency
      */
-    String verifyCurrency(String currency) throws BankingInputException;
+    String verifyCurrency(String currency) throws InputException;
 
     /**
      * Finds the rate from a given currency to another

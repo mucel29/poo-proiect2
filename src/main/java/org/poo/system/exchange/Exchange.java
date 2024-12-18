@@ -2,7 +2,7 @@ package org.poo.system.exchange;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.poo.io.IOUtils;
-import org.poo.system.exceptions.BankingInputException;
+import org.poo.system.exceptions.InputException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,11 +21,11 @@ public record Exchange(String from, String to, double rate) {
     /**
      * Deserializes an {@code Exchange}
      * @param node the JSON representation of the exchange
-     * @throws BankingInputException if an {@code Exchange} could not be deserialized
+     * @throws InputException if an {@code Exchange} could not be deserialized
      */
-    private static Exchange read(final JsonNode node) throws BankingInputException {
+    private static Exchange read(final JsonNode node) throws InputException {
         if (!node.isObject()) {
-            throw new BankingInputException("Exchange rate is not an object node");
+            throw new InputException("Exchange rate is not an object node");
         }
 
         String from = IOUtils.readStringChecked(node, "from");
@@ -40,12 +40,12 @@ public record Exchange(String from, String to, double rate) {
     /**
      * Deserializes a list of {@code Exchange}s
      * @param node the node containing the exchanges
-     * @throws BankingInputException if the node is not an array
+     * @throws InputException if the node is not an array
      * or an {@code Exchange} could not be deserialized
      */
-    public static List<Exchange> readArray(final JsonNode node) throws BankingInputException {
+    public static List<Exchange> readArray(final JsonNode node) throws InputException {
         if (!node.isArray()) {
-            throw new BankingInputException("Exchange rates is not an array node");
+            throw new InputException("Exchange rates is not an array node");
         }
 
         List<Exchange> exchanges = new ArrayList<>();

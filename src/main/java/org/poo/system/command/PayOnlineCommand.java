@@ -3,7 +3,8 @@ package org.poo.system.command;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.poo.io.IOUtils;
 import org.poo.system.BankingSystem;
-import org.poo.system.exceptions.BankingInputException;
+import org.poo.system.exceptions.InputException;
+import org.poo.system.exceptions.handlers.TransactionHandler;
 import org.poo.system.exchange.ExchangeException;
 import org.poo.system.exceptions.OperationException;
 import org.poo.system.exceptions.OwnershipException;
@@ -67,14 +68,11 @@ public class PayOnlineCommand extends Command.Base {
         }
 
         if (!targetCard.isStatus()) {
-            targetCard
-                    .getAccount()
-                    .getTransactions()
-                    .add(new Transaction.Base(
-                            "The card is frozen",
-                            timestamp
-                    ));
-            throw new OperationException("Card " + cardNumber + " is frozen");
+            throw new OperationException(
+                    "The card is frozen",
+                    "Card " + cardNumber + " is frozen",
+                    new TransactionHandler(targetAccount, timestamp)
+            );
         }
 
         double deducted = amount * BankingSystem.getExchangeProvider().getRate(
@@ -83,10 +81,8 @@ public class PayOnlineCommand extends Command.Base {
         );
 
         if (targetAccount.getFunds() < deducted) {
-            targetAccount.getTransactions().add(
-                    new Transaction.Base("Insufficient funds", timestamp)
-            );
             throw new OperationException(
+                    "Insufficient funds",
                     "Not enough balance: "
                             + targetAccount.getFunds()
                             + " (wanted to pay "
@@ -97,12 +93,13 @@ public class PayOnlineCommand extends Command.Base {
                             + amount
                             + " "
                             + currency
-                            + "]"
+                            + "]",
+                    new TransactionHandler(targetAccount, timestamp)
             );
         }
 
         targetAccount.setFunds(targetAccount.getFunds() - deducted);
-        System.out.println(
+        BankingSystem.log(
                 "Paid "
                         + amount
                         + " "
@@ -142,9 +139,9 @@ public class PayOnlineCommand extends Command.Base {
      * Deserializes the given node into a {@code Command.Base} instance
      * @param node the node to deserialize
      * @return the command represented by the node
-     * @throws BankingInputException if the node is not a valid command
+     * @throws InputException if the node is not a valid command
      */
-    public static Command.Base fromNode(final JsonNode node) throws BankingInputException {
+    public static Command.Base fromNode(final JsonNode node) throws InputException {
         double amount = IOUtils.readDoubleChecked(node, "amount");
 
         String cardNumber = IOUtils.readStringChecked(node, "cardNumber");

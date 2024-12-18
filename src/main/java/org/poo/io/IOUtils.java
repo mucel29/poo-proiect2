@@ -1,7 +1,7 @@
 package org.poo.io;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.poo.system.exceptions.BankingInputException;
+import org.poo.system.exceptions.InputException;
 
 public final class IOUtils {
 
@@ -14,21 +14,21 @@ public final class IOUtils {
      * @param node the node to read from
      * @param fieldName the field to read
      * @return the field's value
-     * @throws BankingInputException if the field is not present or it is not a String
+     * @throws InputException if the field is not present or it is not a String
      */
     public static String readStringChecked(
             final JsonNode node,
             final String fieldName
-    ) throws BankingInputException {
+    ) throws InputException {
         JsonNode valueNode = node.get(fieldName);
         // Check node if it's null
         if (valueNode == null) {
-            throw new BankingInputException(fieldName + " not found\n" + node.toPrettyString());
+            throw new InputException(fieldName + " not found\n" + node.toPrettyString());
         }
 
         String value = valueNode.asText();
         if (value.isEmpty()) {
-            throw new BankingInputException(
+            throw new InputException(
                     fieldName + " is empty or not a String\n" + node.toPrettyString()
             );
         }
@@ -41,20 +41,20 @@ public final class IOUtils {
      * @param node the node to read from
      * @param fieldName the field to read
      * @return the field's value
-     * @throws BankingInputException if the field is not present or it is not an int
+     * @throws InputException if the field is not present or it is not an int
      */
     public static int readIntChecked(
             final JsonNode node,
             final String fieldName
-    ) throws BankingInputException {
+    ) throws InputException {
         JsonNode valueNode = node.get(fieldName);
         // Check node if it's null
         if (valueNode == null) {
-            throw new BankingInputException(fieldName + " not found\n" + node.toPrettyString());
+            throw new InputException(fieldName + " not found\n" + node.toPrettyString());
         }
         int value = valueNode.asInt(-1);
         if (value < 0) {
-            throw new BankingInputException(fieldName + " is invalid\n" + node.toPrettyString());
+            throw new InputException(fieldName + " is invalid\n" + node.toPrettyString());
         }
 
         return value;
@@ -65,20 +65,20 @@ public final class IOUtils {
      * @param node the node to read from
      * @param fieldName the field to read
      * @return the field's value
-     * @throws BankingInputException if the field is not present or it is not a double
+     * @throws InputException if the field is not present or it is not a double
      */
     public static double readDoubleChecked(
             final JsonNode node,
             final String fieldName
-    ) throws BankingInputException {
+    ) throws InputException {
         JsonNode valueNode = node.get(fieldName);
         // Check node if it's null
         if (valueNode == null) {
-            throw new BankingInputException(fieldName + " not found\n" + node.toPrettyString());
+            throw new InputException(fieldName + " not found\n" + node.toPrettyString());
         }
         double value = valueNode.asDouble(-1);
         if (value < 0) {
-            throw new BankingInputException(fieldName + " is invalid\n" + node.toPrettyString());
+            throw new InputException(fieldName + " is invalid\n" + node.toPrettyString());
         }
 
         return value;

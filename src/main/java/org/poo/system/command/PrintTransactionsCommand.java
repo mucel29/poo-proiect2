@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.poo.io.IOUtils;
 import org.poo.system.BankingSystem;
 import org.poo.system.command.base.Command;
-import org.poo.system.exceptions.BankingInputException;
+import org.poo.system.exceptions.InputException;
 import org.poo.system.exceptions.UserNotFoundException;
 import org.poo.system.user.User;
 
@@ -43,9 +43,9 @@ public class PrintTransactionsCommand extends Command.Base {
      * Deserializes the given node into a {@code Command.Base} instance
      * @param node the node to deserialize
      * @return the command represented by the node
-     * @throws BankingInputException if the node is not a valid command
+     * @throws InputException if the node is not a valid command
      */
-    public static Command.Base fromNode(final JsonNode node) throws BankingInputException {
+    public static Command.Base fromNode(final JsonNode node) throws InputException {
         String email = IOUtils.readStringChecked(node, "email");
 
         return new PrintTransactionsCommand(email);
