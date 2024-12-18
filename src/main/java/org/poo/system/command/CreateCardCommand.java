@@ -55,8 +55,8 @@ public class CreateCardCommand extends Command.Base {
     @Override
     public void execute() throws UserNotFoundException, OwnershipException {
         super.command = this.cardType.command();
-        User targetUser = BankingSystem.getUserByEmail(email);
-        if (!BankingSystem.getUserByIBAN(account).equals(targetUser)) {
+        User targetUser = BankingSystem.getStorageProvider().getUserByEmail(email);
+        if (!BankingSystem.getStorageProvider().getUserByIban(account).equals(targetUser)) {
             throw new OwnershipException("Account " + account + " does not belong to " + email);
         }
 
@@ -71,6 +71,7 @@ public class CreateCardCommand extends Command.Base {
         );
 
         targetAccount.getCards().add(newCard);
+        BankingSystem.getStorageProvider().registerCard(newCard);
     }
 
     /**

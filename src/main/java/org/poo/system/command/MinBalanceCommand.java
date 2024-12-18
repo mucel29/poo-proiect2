@@ -29,7 +29,7 @@ public class MinBalanceCommand extends Command.Base {
      */
     @Override
     public void execute() throws UserNotFoundException, OwnershipException {
-        Account targetAccount = BankingSystem.getAccount(account);
+        Account targetAccount = BankingSystem.getStorageProvider().getAccountByIban(account);
         targetAccount.setMinBalance(amount);
     }
     /**

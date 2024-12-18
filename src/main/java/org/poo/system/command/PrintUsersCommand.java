@@ -15,8 +15,7 @@ public class PrintUsersCommand extends Command.Base {
     @Override
     public void execute() {
         super.outputArray(
-                arr -> BankingSystem
-                        .getInstance()
+                arr -> BankingSystem.getStorageProvider()
                         .getUsers()
                         .forEach(user -> arr.add(user.toNode()))
         );

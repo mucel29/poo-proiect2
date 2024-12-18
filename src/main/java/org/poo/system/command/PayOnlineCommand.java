@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.poo.io.IOUtils;
 import org.poo.system.BankingSystem;
 import org.poo.system.exceptions.BankingInputException;
-import org.poo.system.exceptions.ExchangeException;
+import org.poo.system.exchange.ExchangeException;
 import org.poo.system.exceptions.OperationException;
 import org.poo.system.exceptions.OwnershipException;
 import org.poo.system.exceptions.UserNotFoundException;
@@ -49,10 +49,10 @@ public class PayOnlineCommand extends Command.Base {
      */
     @Override
     public void execute() throws UserNotFoundException, OwnershipException, ExchangeException {
-        User targetUser = BankingSystem.getUserByEmail(email);
+        User targetUser = BankingSystem.getStorageProvider().getUserByEmail(email);
         Card targetCard;
         try {
-            targetCard = BankingSystem.getCard(cardNumber);
+            targetCard = BankingSystem.getStorageProvider().getCard(cardNumber);
         } catch (OwnershipException e) {
             super.output(output -> {
                 output.put("description", "Card not found");

@@ -29,7 +29,7 @@ public class AddFundsCommand extends Command.Base {
      */
     @Override
     public void execute() throws UserNotFoundException, OwnershipException {
-        Account targetAccount = BankingSystem.getAccount(this.account);
+        Account targetAccount = BankingSystem.getStorageProvider().getAccountByIban(this.account);
         targetAccount.setFunds(targetAccount.getFunds() + this.amount);
     }
 

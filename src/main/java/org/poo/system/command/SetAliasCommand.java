@@ -31,7 +31,12 @@ public class SetAliasCommand extends Command.Base {
     @Override
     public void execute() {
         // What can I do with the email field????
-        BankingSystem.getInstance().getAliasMap().put(alias, account);
+        BankingSystem
+                .getStorageProvider()
+                .registerAlias(
+                        BankingSystem.getStorageProvider().getAccountByIban(account),
+                        alias
+                );
     }
 
     /**

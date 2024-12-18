@@ -47,10 +47,10 @@ public class SendMoneyCommand extends Command.Base {
             throw new OperationException("Invalid sender IBAN [can't use an user as alias]");
         }
 
-        Account senderAccount = BankingSystem.getAccount(sender);
+        Account senderAccount = BankingSystem.getStorageProvider().getAccountByIban(sender);
         Account receiverAccount = Utils.verifyIBAN(receiver)
-                ? BankingSystem.getAccount(receiver)
-                : BankingSystem.getByAlias(receiver);
+                ? BankingSystem.getStorageProvider().getAccountByIban(receiver)
+                : BankingSystem.getStorageProvider().getAccountByAlias(receiver);
 
         double convertedAmount = amount * BankingSystem.getExchangeProvider().getRate(
                 senderAccount.getCurrency(),

@@ -7,7 +7,7 @@ import org.poo.system.BankingSystem;
 import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.BankingInputException;
-import org.poo.system.exceptions.UserNotFoundException;
+import org.poo.system.exceptions.OwnershipException;
 import org.poo.system.user.Account;
 
 public class ReportCommand extends Command.Base {
@@ -34,8 +34,8 @@ public class ReportCommand extends Command.Base {
     public void execute() {
         Account targetAccount;
         try {
-             targetAccount = BankingSystem.getAccount(account);
-        } catch (UserNotFoundException e) {
+             targetAccount = BankingSystem.getStorageProvider().getAccountByIban(account);
+        } catch (OwnershipException e) {
             super.output(root -> {
                 root.put("description", "Account not found");
                 root.put("timestamp", timestamp);

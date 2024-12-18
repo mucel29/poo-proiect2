@@ -1,7 +1,6 @@
 package org.poo.system.exchange;
 
 import org.poo.system.exceptions.BankingInputException;
-import org.poo.system.exceptions.ExchangeException;
 import org.poo.utils.Graph;
 
 import java.util.ArrayList;
@@ -10,7 +9,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-public class ComposedExchangeProvider implements ExchangeProvider {
+public final class ComposedExchangeProvider implements ExchangeProvider {
 
     private final Set<String> registeredCurrencies = new HashSet<>();
     private final List<Exchange> exchanges = new ArrayList<>();

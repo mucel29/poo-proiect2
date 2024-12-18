@@ -38,7 +38,9 @@ public class SplitPayCommand extends Command.Base {
     @Override
     public void execute() throws OwnershipException {
         double amount = totalAmount / accounts.size();
-        List<Account> targetAccounts = accounts.stream().map(BankingSystem::getAccount).toList();
+        List<Account> targetAccounts = accounts.stream().map(
+                BankingSystem.getStorageProvider()::getAccountByIban
+        ).toList();
         Map<Account, Double> deducted = new ConcurrentHashMap<>();
 
         Transaction.SplitPayment transaction =

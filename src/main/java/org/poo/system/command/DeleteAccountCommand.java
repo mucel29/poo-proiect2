@@ -51,12 +51,12 @@ public class DeleteAccountCommand extends Command.Base {
      */
     @Override
     public void execute() throws UserNotFoundException, OwnershipException, OperationException {
-        User targetUser = BankingSystem.getUserByEmail(email);
-        if (!BankingSystem.getUserByIBAN(account).equals(targetUser)) {
+        User targetUser = BankingSystem.getStorageProvider().getUserByEmail(email);
+        if (!BankingSystem.getStorageProvider().getUserByIban(account).equals(targetUser)) {
             throw new OwnershipException("Account " + account + " does not belong to " + email);
         }
 
-        Account targetAccount = BankingSystem.getAccount(account);
+        Account targetAccount = BankingSystem.getStorageProvider().getAccountByIban(account);
 
         if (targetAccount.getFunds() > 0) {
             export(false);
@@ -67,7 +67,8 @@ public class DeleteAccountCommand extends Command.Base {
             throw new OperationException("Account " + account + " still has funds!");
         }
 
-        targetUser.getAccounts().remove(targetAccount);
+//        targetUser.getAccounts().remove(targetAccount);
+        BankingSystem.getStorageProvider().removeAccount(targetAccount);
         export(true);
     }
 

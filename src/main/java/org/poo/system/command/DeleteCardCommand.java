@@ -43,7 +43,7 @@ public class DeleteCardCommand extends Command.Base {
      */
     @Override
     public void execute() throws OwnershipException {
-        Card targetCard = BankingSystem.getCard(cardNumber);
+        Card targetCard = BankingSystem.getStorageProvider().getCard(cardNumber);
         if (!targetCard.getAccount().getOwner().getEmail().equals(email)) {
             throw new OwnershipException("Card " + cardNumber + " is not owned by " + email);
         }
@@ -59,7 +59,8 @@ public class DeleteCardCommand extends Command.Base {
                                 .getAccountIBAN()
                         )
         );
-        targetCard.getAccount().getCards().remove(targetCard);
+        //targetCard.getAccount().getCards().remove(targetCard);
+        BankingSystem.getStorageProvider().removeCard(targetCard);
         System.out.println("Deleted card: " + cardNumber);
     }
 

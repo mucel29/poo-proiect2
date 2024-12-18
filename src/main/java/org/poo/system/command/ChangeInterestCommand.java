@@ -31,7 +31,7 @@ public class ChangeInterestCommand extends Command.Base {
      */
     @Override
     public void execute() throws UserNotFoundException, OperationException {
-        Account targetAccount = BankingSystem.getAccount(account);
+        Account targetAccount = BankingSystem.getStorageProvider().getAccountByIban(account);
         if (targetAccount.getAccountType() != Account.Type.SAVINGS) {
             super.output((root) -> {
                 root.put("description", "This is not a savings account");

@@ -28,7 +28,7 @@ public class CheckCardCommand extends Command.Base {
     public void execute() throws OwnershipException {
         Card targetCard;
         try {
-            targetCard = BankingSystem.getCard(cardNumber);
+            targetCard = BankingSystem.getStorageProvider().getCard(cardNumber);
         } catch (OwnershipException e) {
             super.output((root) -> {
                 root.put("description", "Card not found");

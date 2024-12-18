@@ -23,7 +23,7 @@ public class PrintTransactionsCommand extends Command.Base {
      */
     @Override
     public void execute() throws UserNotFoundException {
-        User targetUser = BankingSystem.getUserByEmail(email);
+        User targetUser = BankingSystem.getStorageProvider().getUserByEmail(email);
         super.outputArray(
                 arr -> targetUser
                         .getTransactions()

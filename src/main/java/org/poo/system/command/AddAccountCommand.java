@@ -39,7 +39,7 @@ public class AddAccountCommand extends Command.Base {
     public void execute() throws UserNotFoundException {
 
         // Get user by using the email
-        User targetUser = BankingSystem.getUserByEmail(this.email);
+        User targetUser = BankingSystem.getStorageProvider().getUserByEmail(this.email);
 
         Account newAccount = new Account(
                 targetUser,
@@ -52,7 +52,7 @@ public class AddAccountCommand extends Command.Base {
         }
 
         // Add the new account into the map and to the user
-        BankingSystem.getInstance().getAccountMap().put(newAccount.getAccountIBAN(), targetUser);
+        BankingSystem.getStorageProvider().registerAccount(newAccount);
         targetUser.getAccounts().add(newAccount);
         newAccount.getTransactions().add(new Transaction.Base("New account created", timestamp));
     }
