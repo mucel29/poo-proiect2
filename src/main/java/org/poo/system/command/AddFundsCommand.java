@@ -6,13 +6,12 @@ import org.poo.system.BankingSystem;
 import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.InputException;
 import org.poo.system.exceptions.OwnershipException;
-import org.poo.system.exceptions.UserNotFoundException;
 import org.poo.system.user.Account;
 
 public class AddFundsCommand extends Command.Base {
 
-    private String account;
-    private double amount;
+    private final String account;
+    private final double amount;
 
     public AddFundsCommand(
             final String account,
@@ -25,11 +24,14 @@ public class AddFundsCommand extends Command.Base {
 
     /**
      * {@inheritDoc}
-     * @throws UserNotFoundException no user owns the given account
+     * @throws OwnershipException no user owns the given account
      */
     @Override
-    public void execute() throws UserNotFoundException, OwnershipException {
+    public void execute() throws OwnershipException {
+        // Retrieve the account from the storage provider
         Account targetAccount = BankingSystem.getStorageProvider().getAccountByIban(this.account);
+
+        // Add the funds to the account
         targetAccount.setFunds(targetAccount.getFunds() + this.amount);
     }
 

@@ -3,6 +3,10 @@ package org.poo.system.exceptions.handlers;
 import org.poo.system.Transaction;
 import org.poo.system.user.Account;
 
+/**
+ * An exception handler that generates an erroneous transaction
+ * with a description containing the exception message
+ */
 public final class TransactionHandler implements ExceptionHandler {
 
     private final Account targetAccount;

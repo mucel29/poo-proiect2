@@ -14,7 +14,7 @@ public final class IOUtils {
      * @param node the node to read from
      * @param fieldName the field to read
      * @return the field's value
-     * @throws InputException if the field is not present or it is not a String
+     * @throws InputException if the field is not present, or it is not a String
      */
     public static String readStringChecked(
             final JsonNode node,
@@ -27,6 +27,7 @@ public final class IOUtils {
         }
 
         String value = valueNode.asText();
+        // Check if the value is a string and not empty
         if (value.isEmpty()) {
             throw new InputException(
                     fieldName + " is empty or not a String\n" + node.toPrettyString()
@@ -41,7 +42,7 @@ public final class IOUtils {
      * @param node the node to read from
      * @param fieldName the field to read
      * @return the field's value
-     * @throws InputException if the field is not present or it is not an int
+     * @throws InputException if the field is not present, or it is not an int
      */
     public static int readIntChecked(
             final JsonNode node,
@@ -52,7 +53,9 @@ public final class IOUtils {
         if (valueNode == null) {
             throw new InputException(fieldName + " not found\n" + node.toPrettyString());
         }
+
         int value = valueNode.asInt(-1);
+        // Check if the value is an integer
         if (value < 0) {
             throw new InputException(fieldName + " is invalid\n" + node.toPrettyString());
         }
@@ -65,7 +68,7 @@ public final class IOUtils {
      * @param node the node to read from
      * @param fieldName the field to read
      * @return the field's value
-     * @throws InputException if the field is not present or it is not a double
+     * @throws InputException if the field is not present, or it is not a double
      */
     public static double readDoubleChecked(
             final JsonNode node,
@@ -76,7 +79,9 @@ public final class IOUtils {
         if (valueNode == null) {
             throw new InputException(fieldName + " not found\n" + node.toPrettyString());
         }
+
         double value = valueNode.asDouble(-1);
+        // Check if the value is a double
         if (value < 0) {
             throw new InputException(fieldName + " is invalid\n" + node.toPrettyString());
         }

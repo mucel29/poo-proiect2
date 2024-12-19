@@ -31,7 +31,7 @@ public class Card implements NodeConvertable {
     private Account account;
     private Type cardType;
     private String cardNumber;
-    private boolean status = true;
+    private boolean active = true;
 
     public Card(
             final Account account,
@@ -50,7 +50,7 @@ public class Card implements NodeConvertable {
     public ObjectNode toNode() {
         ObjectNode root = StateWriter.getMapper().createObjectNode();
         root.put("cardNumber", cardNumber);
-        root.put("status", status ? "active" : "frozen");
+        root.put("status", active ? "active" : "frozen");
 
         return root;
     }

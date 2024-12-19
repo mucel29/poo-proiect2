@@ -7,7 +7,9 @@ import org.poo.system.BankingSystem;
 import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.InputException;
+import org.poo.system.exceptions.OperationException;
 import org.poo.system.exceptions.OwnershipException;
+import org.poo.system.exceptions.handlers.CommandDescriptionHandler;
 import org.poo.system.user.Account;
 
 public class ReportCommand extends Command.Base {
@@ -29,19 +31,23 @@ public class ReportCommand extends Command.Base {
 
     /**
      * {@inheritDoc}
+     * @throws OwnershipException if the given account is not owned by any user
      */
     @Override
-    public void execute() {
+    public void execute() throws OwnershipException {
+        // Retrieve the account from the storage provider
         Account targetAccount;
         try {
              targetAccount = BankingSystem.getStorageProvider().getAccountByIban(account);
         } catch (OwnershipException e) {
-            super.output(root -> {
-                root.put("description", "Account not found");
-                root.put("timestamp", timestamp);
-            });
-            return;
+            throw new OperationException(
+                    "Account not found",
+                    e.getMessage(),
+                    new CommandDescriptionHandler(this)
+            );
         }
+
+        // Print the account's transaction record
         super.output((root) -> {
             root.put("balance", targetAccount.getFunds());
             root.put("IBAN", account);

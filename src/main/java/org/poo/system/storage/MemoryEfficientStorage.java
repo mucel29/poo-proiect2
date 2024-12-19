@@ -14,6 +14,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * A {@code StorageProvider} implementation that stores only the users.
+ * </br>
+ * All other objects are accessed through the hierarchy, starting from the user
+ */
 public final class MemoryEfficientStorage implements StorageProvider {
 
     private final List<User> users = new ArrayList<>();
@@ -82,7 +87,7 @@ public final class MemoryEfficientStorage implements StorageProvider {
         }
 
         // If there isn't a duplicate, the account is already registered
-
+        account.getOwner().getAccounts().add(account);
     }
 
     /**
@@ -126,6 +131,7 @@ public final class MemoryEfficientStorage implements StorageProvider {
         }
 
         // If there isn't a duplicate, the account is already registered
+        card.getAccount().getCards().add(card);
     }
 
     /**

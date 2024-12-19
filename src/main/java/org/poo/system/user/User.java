@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Getter;
 import org.poo.io.IOUtils;
 import org.poo.io.StateWriter;
+import org.poo.system.BankingSystem;
 import org.poo.system.Transaction;
 import org.poo.system.exceptions.InputException;
 import org.poo.system.exceptions.OwnershipException;
@@ -76,7 +77,9 @@ public class User implements NodeConvertable {
                 // If the user could not be read,
                 // continue reading the other users,
                 // it's not a critical failing point
-                e.printStackTrace();
+                if (BankingSystem.VERBOSE_LOGGING) {
+                    System.err.println(e.getDetailedMessage());
+                }
             }
         }
 

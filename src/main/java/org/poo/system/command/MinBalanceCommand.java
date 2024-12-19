@@ -6,7 +6,6 @@ import org.poo.system.BankingSystem;
 import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.InputException;
 import org.poo.system.exceptions.OwnershipException;
-import org.poo.system.exceptions.UserNotFoundException;
 import org.poo.system.user.Account;
 
 public class MinBalanceCommand extends Command.Base {
@@ -28,8 +27,11 @@ public class MinBalanceCommand extends Command.Base {
      * @throws OwnershipException if no user owns the given account
      */
     @Override
-    public void execute() throws UserNotFoundException, OwnershipException {
+    public void execute() throws OwnershipException {
+        // Retrieve the account from the storage provider
         Account targetAccount = BankingSystem.getStorageProvider().getAccountByIban(account);
+
+        // Set the new minimum balance
         targetAccount.setMinBalance(amount);
     }
     /**

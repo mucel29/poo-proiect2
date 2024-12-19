@@ -8,7 +8,10 @@ import org.poo.system.BankingSystem;
 import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.InputException;
+import org.poo.system.exceptions.OperationException;
 import org.poo.system.exceptions.OwnershipException;
+import org.poo.system.exceptions.handlers.CommandDescriptionHandler;
+import org.poo.system.exceptions.handlers.CommandErrorHandler;
 import org.poo.system.user.Account;
 
 import java.util.HashMap;
@@ -36,25 +39,30 @@ public class SpendingReportCommand extends Command.Base {
      */
     @Override
     public void execute() {
+        // Retrieve the account from the storage provider
         Account targetAccount;
         try {
             targetAccount = BankingSystem.getStorageProvider().getAccountByIban(account);
         } catch (OwnershipException e) {
-            super.output(root -> {
-                root.put("description", "Account not found");
-                root.put("timestamp", timestamp);
-            });
-            return;
+            throw new OperationException(
+                    "Account not found",
+                    e.getMessage(),
+                    new CommandDescriptionHandler(this)
+            );
         }
+
+        // Check if the account is not a savings one
         if (targetAccount.getAccountType() == Account.Type.SAVINGS) {
-            super.output(root -> {
-                root.put(
-                        "error",
-                        "This kind of report is not supported for a saving account"
-                );
-            });
-            return;
+            throw new OperationException(
+                    "This kind of report is not supported for a saving account",
+                    "Account " + targetAccount.getAccountIBAN() + " is not a savings account",
+                    new CommandErrorHandler(this, false)
+            );
         }
+
+        // Output account info,
+        // Transactions to commerciants,
+        // Commerciant spending
         super.output((root) -> {
             root.put("balance", targetAccount.getFunds());
             root.put("IBAN", account);
@@ -62,12 +70,16 @@ public class SpendingReportCommand extends Command.Base {
             ArrayNode arr = root.putArray("transactions");
             Map<String, Double> commerciants = new HashMap<>();
 
+            // Filter account's transactions to
+            // have a commerciant and it's timestamp to be within range
             for (Transaction transaction : targetAccount.getTransactions()) {
                 String commerciant = transaction.getCommerciant();
                 double amount = transaction.getAmount();
+
                 if (commerciant == null || commerciant.isEmpty() || amount <= 0) {
                     continue;
                 }
+
                 if (transaction.getTimestamp() >= startTimestamp
                         && transaction.getTimestamp() <= endTimestamp
                 ) {

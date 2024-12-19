@@ -4,6 +4,10 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.poo.io.StateWriter;
 import org.poo.system.command.base.Command;
 
+/**
+ * An exception handler that outputs a command result
+ * with a description containing the exception message
+ */
 public final class CommandDescriptionHandler implements ExceptionHandler {
 
 

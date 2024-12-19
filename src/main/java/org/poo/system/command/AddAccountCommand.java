@@ -41,19 +41,23 @@ public class AddAccountCommand extends Command.Base {
         // Get user by using the email
         User targetUser = BankingSystem.getStorageProvider().getUserByEmail(this.email);
 
+        // Create the account
         Account newAccount = new Account(
                 targetUser,
                 Utils.generateIBAN(),
                 this.currency,
                 this.accountType
         );
+
+        // If the requested account is a savings one, add the interest
         if (this.accountType == Account.Type.SAVINGS) {
             newAccount.setInterest(this.interest);
         }
 
-        // Add the new account into the map and to the user
+        // Register the created account
         BankingSystem.getStorageProvider().registerAccount(newAccount);
-        targetUser.getAccounts().add(newAccount);
+
+        // Add creation transaction to the account
         newAccount.getTransactions().add(new Transaction.Base("New account created", timestamp));
     }
 

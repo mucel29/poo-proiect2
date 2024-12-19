@@ -7,6 +7,7 @@ import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.InputException;
 import org.poo.system.exceptions.OwnershipException;
+import org.poo.system.exceptions.handlers.CommandDescriptionHandler;
 import org.poo.system.user.Account;
 import org.poo.system.user.Card;
 
@@ -26,27 +27,33 @@ public class CheckCardCommand extends Command.Base {
      */
     @Override
     public void execute() throws OwnershipException {
+
+        // Retrieve the card from the storage provider, generate error on fail
         Card targetCard;
         try {
             targetCard = BankingSystem.getStorageProvider().getCard(cardNumber);
         } catch (OwnershipException e) {
-            super.output((root) -> {
-                root.put("description", "Card not found");
-                root.put("timestamp", timestamp);
-            });
-            return;
+            throw new OwnershipException(
+                    "Card not found",
+                    e.getMessage(),
+                    new CommandDescriptionHandler(this)
+            );
         }
 
-
+        // Retrieve the associated account
         Account link = targetCard.getAccount();
+
+        // Verify the account's balance
         if (link.getFunds() <= link.getMinBalance()) {
             // Freeze card
-            targetCard.setStatus(false);
+            targetCard.setActive(false);
             link.getTransactions().add(new Transaction.Base(
                     "You have reached the minimum amount of funds, the card will be frozen",
                     timestamp
             ));
         } else if (link.getFunds() - link.getMinBalance() <= WARNING_THRESHOLD) {
+            // The account is nearing the minimum balance threshold
+            // Issue a warning
             link.getTransactions().add(new Transaction.Base(
                     "Warning??????",
                     timestamp

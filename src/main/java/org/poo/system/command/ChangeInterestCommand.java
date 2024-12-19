@@ -7,7 +7,7 @@ import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.InputException;
 import org.poo.system.exceptions.OperationException;
-import org.poo.system.exceptions.UserNotFoundException;
+import org.poo.system.exceptions.OwnershipException;
 import org.poo.system.exceptions.handlers.CommandDescriptionHandler;
 import org.poo.system.user.Account;
 
@@ -27,12 +27,15 @@ public class ChangeInterestCommand extends Command.Base {
 
     /**
      * {@inheritDoc}
-     * @throws UserNotFoundException if no user owns the given account
+     * @throws OwnershipException if no user owns the given account
      * @throws OperationException if the account is not a savings one
      */
     @Override
-    public void execute() throws UserNotFoundException, OperationException {
+    public void execute() throws OwnershipException, OperationException {
+        // Retrieve the account from the storage provider
         Account targetAccount = BankingSystem.getStorageProvider().getAccountByIban(account);
+
+        // Generate error if the account is not a savings one
         if (targetAccount.getAccountType() != Account.Type.SAVINGS) {
             throw new OperationException(
                     "This is not a savings account",
@@ -41,12 +44,15 @@ public class ChangeInterestCommand extends Command.Base {
             );
         }
 
+        // Add a transaction for the rate change
         targetAccount
                 .getTransactions()
                 .add(new Transaction.Base(
-                        "Interest rate of the account changed to " + newRate, timestamp
+                        "Interest rate of the account changed to " + newRate,
+                        timestamp
                 ));
 
+        // Change the rate
         targetAccount.setInterest(newRate);
 
     }

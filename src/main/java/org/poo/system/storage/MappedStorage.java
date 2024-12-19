@@ -13,6 +13,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * A {@code StorageProvider} implementation that stores all users,
+ * accounts, cards and aliases inside maps for faster access
+ */
 public final class MappedStorage implements StorageProvider {
 
     private final List<User> userList = new ArrayList<>();
@@ -80,6 +84,7 @@ public final class MappedStorage implements StorageProvider {
             );
         }
 
+        account.getOwner().getAccounts().add(account);
         accounts.put(account.getAccountIBAN(), account);
     }
 
@@ -123,6 +128,7 @@ public final class MappedStorage implements StorageProvider {
             );
         }
 
+        card.getAccount().getCards().add(card);
         cards.put(card.getCardNumber(), card);
     }
 

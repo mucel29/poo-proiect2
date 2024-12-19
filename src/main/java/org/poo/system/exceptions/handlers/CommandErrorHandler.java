@@ -4,12 +4,23 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.poo.io.StateWriter;
 import org.poo.system.command.base.Command;
 
+/**
+ * An exception handler that outputs a command result
+ * with an error containing the exception message
+ */
 public final class CommandErrorHandler implements ExceptionHandler {
 
     private final Command.Base command;
+    private final boolean writeTimestamp;
 
     public CommandErrorHandler(final Command.Base command) {
         this.command = command;
+        writeTimestamp = true;
+    }
+
+    public CommandErrorHandler(final Command.Base command, final boolean writeTimestamp) {
+        this.command = command;
+        this.writeTimestamp = writeTimestamp;
     }
 
     /**
@@ -23,7 +34,9 @@ public final class CommandErrorHandler implements ExceptionHandler {
         node.put("timestamp", command.getTimestamp());
         ObjectNode output = node.putObject("output");
         output.put("error", message);
-        output.put("timestamp", command.getTimestamp());
+        if (writeTimestamp) {
+            output.put("timestamp", command.getTimestamp());
+        }
         StateWriter.write(node);
     }
 

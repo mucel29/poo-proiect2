@@ -45,20 +45,26 @@ public class SendMoneyCommand extends Command.Base {
      */
     @Override
     public void execute() throws AliasException, OwnershipException, OperationException {
+        // Check if the sender is a valid account and not an alias
         if (!Utils.verifyIBAN(sender)) {
             throw new AliasException("Invalid sender IBAN [can't use an user as alias]");
         }
 
+        // Retrieve the sender account from the storage provider
         Account senderAccount = BankingSystem.getStorageProvider().getAccountByIban(sender);
+
+        // Retrieve the receiver account from the storage provider
         Account receiverAccount = Utils.verifyIBAN(receiver)
                 ? BankingSystem.getStorageProvider().getAccountByIban(receiver)
                 : BankingSystem.getStorageProvider().getAccountByAlias(receiver);
 
+        // Convert he amount to be transferred to the receiver
         double convertedAmount = amount * BankingSystem.getExchangeProvider().getRate(
                 senderAccount.getCurrency(),
                 receiverAccount.getCurrency()
         );
 
+        // Check if the sender has enough funds
         if (senderAccount.getFunds() < amount) {
             throw new OperationException(
                     "Insufficient funds",
@@ -77,6 +83,7 @@ public class SendMoneyCommand extends Command.Base {
             );
         }
 
+        // Create the transaction
         Transaction.Transfer transaction = new Transaction.Transfer(description, timestamp)
                 .setSenderIBAN(senderAccount.getAccountIBAN())
                 .setReceiverIBAN(receiverAccount.getAccountIBAN())
@@ -84,9 +91,11 @@ public class SendMoneyCommand extends Command.Base {
                 .setCurrency(senderAccount.getCurrency())
                 .setTransferType(Transaction.TransferType.SENT);
 
+        // Deduct the amount from the sender's account and emmit a copy of the transaction
         senderAccount.setFunds(senderAccount.getFunds() - amount);
         senderAccount.getTransactions().add(transaction.clone());
 
+        // Add the amount to the receiver's account and emmit a `received` transaction
         receiverAccount.setFunds(receiverAccount.getFunds() + convertedAmount);
         receiverAccount.getTransactions().add(
                 transaction

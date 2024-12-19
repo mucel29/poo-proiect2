@@ -9,7 +9,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.Optional;
 
 public final class ReflectionUtils {
 
@@ -102,14 +102,13 @@ public final class ReflectionUtils {
      * @return the {@code Field} if it can be accessed or {@code null}
      */
     public static Field findField(final String fieldName, final Object caller) {
-        try {
-            return Arrays.stream(caller.getClass().getDeclaredFields())
-                    .filter((field) -> field.getName().equals(fieldName))
-                    .findFirst()
-                    .get();
-        } catch (NoSuchElementException e) {
-            return null;
-        }
+         Optional<Field> targetField = Arrays.stream(
+                 caller.getClass().getDeclaredFields()
+                 )
+                 .filter((field) -> field.getName().equals(fieldName))
+                 .findFirst();
+
+        return targetField.orElse(null);
     }
 
 }

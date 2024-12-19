@@ -6,7 +6,7 @@ import lombok.Getter;
 import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.BankingException;
 import org.poo.system.exceptions.InputException;
-import org.poo.system.exchange.ComposedExchangeProvider;
+import org.poo.system.exchange.ComposedExchange;
 import org.poo.system.exchange.Exchange;
 import org.poo.system.exchange.ExchangeProvider;
 import org.poo.system.storage.MappedStorage;
@@ -28,6 +28,7 @@ public final class BankingSystem {
     private ExchangeProvider exchangeProvider;
     private StorageProvider storageProvider;
 
+    // Set to true to see unhandled errors and detailed messages
     public static final boolean VERBOSE_LOGGING = false;
 
     private BankingSystem() {
@@ -55,7 +56,7 @@ public final class BankingSystem {
      */
     private void reset() {
         commands.clear();
-        instance.exchangeProvider = new ComposedExchangeProvider();
+        instance.exchangeProvider = new ComposedExchange();
         instance.storageProvider = new MappedStorage();
 
         Utils.resetRandom();
@@ -74,6 +75,7 @@ public final class BankingSystem {
 
         instance.reset();
         testNumber++;
+        log("Starting test [" + testNumber + "] ...");
         String jsonString = Files.readString(file.toPath());
         JsonNode root = new ObjectMapper().readTree(jsonString);
 
@@ -118,9 +120,12 @@ public final class BankingSystem {
                 command.execute();
             } catch (BankingException e) {
                 if (!e.handle()) {
-                    System.err.println(
-                            "[" + testNumber + "] Unhandled exception: " + e.getDetailedMessage()
-                    );
+                    if (VERBOSE_LOGGING) {
+                        System.err.println(
+                                "[" + testNumber + "] Unhandled exception: "
+                                        + e.getDetailedMessage()
+                        );
+                    }
                 }
 
             }

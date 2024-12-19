@@ -33,16 +33,22 @@ public class SplitPayCommand extends Command.Base {
 
     /**
      * {@inheritDoc}
-     * @throws OwnershipException if all the accounts aren't owned by a user
+     * @throws OwnershipException if any of the accounts isn't owned by a user
      */
     @Override
     public void execute() throws OwnershipException {
+        // Calculate the amount to be paid be each account
         double amount = totalAmount / accounts.size();
+
+        // Retrieve all the accounts from the storage provider
         List<Account> targetAccounts = accounts.stream().map(
                 BankingSystem.getStorageProvider()::getAccountByIban
         ).toList();
+
+        // Map to store the deducted amounts in the account's currency
         Map<Account, Double> deducted = new ConcurrentHashMap<>();
 
+        // Create a split transaction
         Transaction.SplitPayment transaction =
                 new Transaction.SplitPayment(
 
@@ -63,6 +69,9 @@ public class SplitPayCommand extends Command.Base {
                     currency,
                     account.getCurrency()
             );
+
+            // If an account doesn't have enough funds,
+            // set the transaction as an erroneous one
             if (account.getFunds() < localAmount) {
                 transaction.setError(
                         "Account "
@@ -72,6 +81,7 @@ public class SplitPayCommand extends Command.Base {
                 return;
             }
 
+            // Store amount to be deducted in the account's currency
             deducted.put(account, localAmount);
 
         });
@@ -79,6 +89,8 @@ public class SplitPayCommand extends Command.Base {
         // Add transaction to user and possibly deduct amount
         targetAccounts.parallelStream().forEach((account) -> {
            account.getTransactions().add(transaction);
+
+           // Everyone can pay
            if (transaction.getError() == null) {
                account.setFunds(account.getFunds() - deducted.get(account));
            }

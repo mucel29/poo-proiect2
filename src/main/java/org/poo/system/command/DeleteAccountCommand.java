@@ -36,13 +36,21 @@ public class DeleteAccountCommand extends Command.Base {
      */
     @Override
     public void execute() throws UserNotFoundException, OwnershipException, OperationException {
+        // Retrieve the user from the storage provider
         User targetUser = BankingSystem.getStorageProvider().getUserByEmail(email);
+
+        // Check if the given user matches the account owner
+        // NOTE: this could've been checked more easily
+        // by retrieving the target account
+        // and checking the owner's email with the provided email
+        // but the storage provider also check if the user / account is registered
         if (!BankingSystem.getStorageProvider().getUserByIban(account).equals(targetUser)) {
             throw new OwnershipException("Account " + account + " does not belong to " + email);
         }
 
         Account targetAccount = BankingSystem.getStorageProvider().getAccountByIban(account);
 
+        // If the user still has funds, generate errors
         if (targetAccount.getFunds() > 0) {
             throw new OperationException(
                     "Account couldn't be deleted - see org.poo.transactions for details",
@@ -56,6 +64,7 @@ public class DeleteAccountCommand extends Command.Base {
             );
         }
 
+        // Remove the account and output success
         BankingSystem.getStorageProvider().removeAccount(targetAccount);
         super.output(obj -> {
             obj.put(

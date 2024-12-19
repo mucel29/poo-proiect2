@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Getter;
 import org.poo.io.IOUtils;
 import org.poo.io.StateWriter;
+import org.poo.system.BankingSystem;
 import org.poo.system.command.AddAccountCommand;
 import org.poo.system.command.AddFundsCommand;
 import org.poo.system.command.AddInterestCommand;
@@ -41,6 +42,13 @@ public interface Command {
     void execute();
 
 
+    /**
+     * Enum representing all possible commands implemented by the system
+     * <ul>
+     *     <li>Command name from the tests</li>
+     *     <li>Generator static method based on the {@code JsonNode}</li>
+     * </ul>
+     */
     enum Type {
         ADD_ACCOUNT(
                 "addAccount",
@@ -202,7 +210,9 @@ public interface Command {
                 // If the command could not be read,
                 // continue reading the other commands,
                 // it's not a critical failing point
-                e.printStackTrace();
+                if (BankingSystem.VERBOSE_LOGGING) {
+                    System.err.println(e.getMessage());
+                }
             }
         }
 
@@ -229,7 +239,10 @@ public interface Command {
             ObjectNode root = StateWriter.getMapper().createObjectNode();
             root.put("timestamp", timestamp);
             root.put("command", command.toString());
+
+            // Create the output node and send it to the consumer to populate it
             consumer.accept(root.putObject("output"));
+
             StateWriter.write(root);
         }
 
@@ -243,7 +256,10 @@ public interface Command {
             ObjectNode root = StateWriter.getMapper().createObjectNode();
             root.put("timestamp", timestamp);
             root.put("command", command.toString());
+
+            // Create the output node and send it to the consumer to populate it
             consumer.accept(root.putArray("output"));
+
             StateWriter.write(root);
         }
 
