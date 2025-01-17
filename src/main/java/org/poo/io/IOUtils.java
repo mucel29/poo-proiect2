@@ -32,9 +32,9 @@ public final class IOUtils {
 
         String value = valueNode.asText();
         // Check if the value is a string and not empty
-        if (value.isEmpty()) {
+        if (value == null) {
             throw new InputException(
-                    fieldName + " is empty or not a String\n" + node.toPrettyString()
+                    fieldName + " is not a String\n" + node.toPrettyString()
             );
         }
 

@@ -28,7 +28,13 @@ public class StandardPlan extends ServicePlan {
      */
     @Override
     public void applyFee(final Account account, final double amount) {
-        account.setFunds(account.getFunds() - amount * FEE);
+        double convertedAmount =
+                amount
+                        * BankingSystem
+                        .getExchangeProvider()
+                        .getRate("RON", account.getCurrency());
+
+        account.setFunds(account.getFunds() - convertedAmount * FEE);
     }
 
     /**

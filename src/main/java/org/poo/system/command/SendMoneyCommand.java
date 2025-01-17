@@ -6,9 +6,12 @@ import org.poo.system.BankingSystem;
 import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.AliasException;
+import org.poo.system.exceptions.BankingException;
 import org.poo.system.exceptions.InputException;
 import org.poo.system.exceptions.OperationException;
 import org.poo.system.exceptions.OwnershipException;
+import org.poo.system.exceptions.UserNotFoundException;
+import org.poo.system.exceptions.handlers.CommandDescriptionHandler;
 import org.poo.system.exceptions.handlers.TransactionHandler;
 import org.poo.system.user.Account;
 import org.poo.utils.Utils;
@@ -45,6 +48,16 @@ public class SendMoneyCommand extends Command.Base {
      */
     @Override
     public void execute() throws AliasException, OwnershipException, OperationException {
+
+        // Check if there's any receiver
+        if (receiver.isEmpty()) {
+            throw new UserNotFoundException(
+                    "User not found",
+                    "Receiver field is empty",
+                    new CommandDescriptionHandler(this)
+            );
+        }
+
         // Check if the sender is a valid account and not an alias
         if (!Utils.verifyIBAN(sender)) {
             throw new AliasException("Invalid sender IBAN [can't use an user as alias]");
@@ -54,15 +67,32 @@ public class SendMoneyCommand extends Command.Base {
         Account senderAccount = BankingSystem.getStorageProvider().getAccountByIban(sender);
 
         // Retrieve the receiver account from the storage provider
-        Account receiverAccount = Utils.verifyIBAN(receiver)
-                ? BankingSystem.getStorageProvider().getAccountByIban(receiver)
-                : BankingSystem.getStorageProvider().getAccountByAlias(receiver);
+        Account receiverAccount;
+        try {
+            receiverAccount = Utils.verifyIBAN(receiver)
+                    ? BankingSystem.getStorageProvider().getAccountByIban(receiver)
+                    : BankingSystem.getStorageProvider().getAccountByAlias(receiver);
+        } catch (BankingException e) {
+            // Todo: get a commerciant
+            throw new OwnershipException(
+                    "User not found", // kinda dumb ngl
+                    "Receiver not found: " + receiver,
+                    new CommandDescriptionHandler(this)
+            );
+        }
 
-        // Convert he amount to be transferred to the receiver
+        if (amount <= 0.0) {
+            BankingSystem.log("Tried to pay 0.0 to " + receiver);
+            return;
+        }
+
+        // Convert the amount to be transferred to the receiver
         double convertedAmount = amount * BankingSystem.getExchangeProvider().getRate(
                 senderAccount.getCurrency(),
                 receiverAccount.getCurrency()
         );
+
+        double oldBal = senderAccount.getFunds();
 
         // Check if the sender has enough funds
         if (senderAccount.getFunds() < amount) {
@@ -95,6 +125,15 @@ public class SendMoneyCommand extends Command.Base {
         senderAccount.setFunds(senderAccount.getFunds() - amount);
         senderAccount.getTransactions().add(transaction.clone());
 
+        senderAccount.getOwner().getServicePlan()
+                .applyFee(
+                        senderAccount,
+                        amount
+                                * BankingSystem.getExchangeProvider().getRate(
+                                        senderAccount.getCurrency(), "RON"
+                        )
+                );
+
         // Add the amount to the receiver's account and emmit a `received` transaction
         receiverAccount.setFunds(receiverAccount.getFunds() + convertedAmount);
         receiverAccount.getTransactions().add(
@@ -120,6 +159,9 @@ public class SendMoneyCommand extends Command.Base {
                         : " ["
                         + receiver
                         + "]")
+                        + " {" + oldBal
+                        + " -> " + senderAccount.getFunds()
+                        + "}"
         );
 
     }

@@ -106,7 +106,19 @@ public class WithdrawSavingsCommand extends Command.Base {
 
         Account targetAccount = target.get();
 
-        double toDeduce = amount * BankingSystem.getExchangeProvider().getRate(currency, savingsAccount.getCurrency());
+        double toDeduce = amount
+                * BankingSystem.getExchangeProvider().getRate(
+                        currency, savingsAccount.getCurrency()
+        );
+
+        savingsAccount.getOwner().getServicePlan().applyFee(
+                savingsAccount,
+                toDeduce
+                        * BankingSystem.getExchangeProvider().getRate(
+                                savingsAccount.getCurrency(),
+                                "RON"
+                        )
+        );
 
         if (savingsAccount.getFunds() < amount) {
             throw new OperationException(

@@ -8,7 +8,7 @@ import java.util.Map;
 
 public class GoldPlan extends ServicePlan {
 
-    private static final double FEE = 2e-3;
+    private static final double FEE = 0;
     private static final Map<SpendingStrategy.Tier, Double> SPENDING_FEES = Map.of(
             SpendingStrategy.Tier.TIER_1, 1e-3,
             SpendingStrategy.Tier.TIER_2, 2e-3,
@@ -28,7 +28,13 @@ public class GoldPlan extends ServicePlan {
      */
     @Override
     public void applyFee(final Account account, final double amount) {
-        account.setFunds(account.getFunds() - amount * FEE);
+//        double convertedAmount =
+//                amount
+//                        * BankingSystem
+//                        .getExchangeProvider()
+//                        .getRate("RON", account.getCurrency());
+//
+//        account.setFunds(account.getFunds() - convertedAmount * FEE);
     }
 
     /**

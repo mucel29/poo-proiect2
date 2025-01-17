@@ -2,12 +2,17 @@ package org.poo.system.user.plan;
 
 import lombok.Getter;
 import org.poo.system.commerce.cashback.SpendingStrategy;
+import org.poo.system.exceptions.InputException;
 import org.poo.system.user.Account;
 
+import java.util.Arrays;
+import java.util.NoSuchElementException;
+
+@Getter
 public abstract class ServicePlan {
 
     @Getter
-    enum Tier {
+    public enum Tier {
         STANDARD(100, 350),
         STUDENT(100, 350),
         SILVER(-1, 250),
@@ -23,6 +28,30 @@ public abstract class ServicePlan {
             this.silverUpgrade = silverUpgrade;
             this.goldUpgrade = goldUpgrade;
         }
+
+        @Override
+        public String toString() {
+            return this.name().toLowerCase();
+        }
+
+        /**
+         * Converts a {@code String} to an {@code ServicePlan.Tier}
+         * @param label the string to convert
+         * @return the corresponding {@code ServicePlan.Tier}
+         * @throws InputException if the label can't be converted to an {@code ServicePlan.Tier}
+         */
+        public static ServicePlan.Tier fromString(final String label) throws InputException {
+            try {
+                return Arrays
+                        .stream(ServicePlan.Tier.values())
+                        .filter(tier -> tier.name().equalsIgnoreCase(label))
+                        .toList()
+                        .getFirst();
+            } catch (NoSuchElementException e) {
+                throw new InputException("Unknown plan tier: " + label);
+            }
+        }
+
 
     }
 

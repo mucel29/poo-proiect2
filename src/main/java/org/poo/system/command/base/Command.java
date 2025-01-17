@@ -10,6 +10,7 @@ import org.poo.system.BankingSystem;
 import org.poo.system.command.AddAccountCommand;
 import org.poo.system.command.AddFundsCommand;
 import org.poo.system.command.AddInterestCommand;
+import org.poo.system.command.CashWithdrawCommand;
 import org.poo.system.command.ChangeInterestCommand;
 import org.poo.system.command.CheckCardCommand;
 import org.poo.system.command.CreateCardCommand;
@@ -24,6 +25,7 @@ import org.poo.system.command.SendMoneyCommand;
 import org.poo.system.command.SetAliasCommand;
 import org.poo.system.command.SpendingReportCommand;
 import org.poo.system.command.SplitPayCommand;
+import org.poo.system.command.UpgradePlanCommand;
 import org.poo.system.command.WithdrawSavingsCommand;
 import org.poo.system.exceptions.InputException;
 import org.poo.system.user.Card;
@@ -118,6 +120,14 @@ public interface Command {
         WITHDRAW_SAVINGS(
                 "withdrawSavings",
                 WithdrawSavingsCommand::fromNode
+        ),
+        UPGRADE_PLAN(
+                "upgradePlan",
+                UpgradePlanCommand::fromNode
+        ),
+        CASH_WITHDRAWAL(
+            "cashWithdrawal",
+                CashWithdrawCommand::fromNode
         ),
 
         PRINT_TRANSACTIONS(

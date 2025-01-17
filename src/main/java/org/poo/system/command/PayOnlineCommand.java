@@ -82,6 +82,11 @@ public class PayOnlineCommand extends Command.Base {
             );
         }
 
+        if (amount <= 0.0) {
+            BankingSystem.log("Tried to pay 0.0 to " + commerciantName);
+            return;
+        }
+
         // Convert from requested currency to the account's currency
         double deducted = amount * BankingSystem.getExchangeProvider().getRate(
                 currency,
@@ -129,13 +134,17 @@ public class PayOnlineCommand extends Command.Base {
                         .setAmount(deducted)
         );
 
+        double ronAmount = amount * BankingSystem.getExchangeProvider().getRate(currency, "RON");
+
         Commerciant commerciant = BankingSystem
                 .getStorageProvider()
                 .getCommerciantByName(commerciantName);
 
+        targetAccount.getOwner().getServicePlan().applyFee(targetAccount, ronAmount);
+
         commerciant.getStrategy().apply(
                 targetAccount,
-                amount * BankingSystem.getExchangeProvider().getRate(currency, "RON")
+                ronAmount
         );
 
         // Generate a new one time card

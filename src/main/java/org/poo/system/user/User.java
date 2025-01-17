@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Getter;
+import lombok.Setter;
 import org.poo.io.IOUtils;
 import org.poo.io.StateWriter;
 import org.poo.system.BankingSystem;
@@ -33,6 +34,8 @@ public class User implements NodeConvertable {
     private final LocalDate birthDate;
 
     private final List<Account> accounts = new ArrayList<>();
+
+    @Setter
     private ServicePlan servicePlan;
 
     public User(

@@ -257,5 +257,36 @@ public interface Transaction extends NodeConvertable, Cloneable, Comparable<Tran
 
     }
 
+    /**
+     * A plan upgrade transaction
+     */
+    @Setter @Accessors(chain = true)
+    class PlanUpgrade extends Base {
+        private String accountIBAN;
+        private String newPlanType;
+
+        public PlanUpgrade(
+                final String description,
+                final int timestamp
+        ) {
+            super(description, timestamp);
+        }
+    }
+
+    /**
+     * A cash withdrawal transaction
+     */
+    @Setter @Accessors(chain = true)
+    class CashWithdrawal extends Base {
+        private double amount;
+
+        public CashWithdrawal(
+                final String description,
+                final int timestamp
+        ) {
+            super(description, timestamp);
+        }
+    }
+
 }
 
