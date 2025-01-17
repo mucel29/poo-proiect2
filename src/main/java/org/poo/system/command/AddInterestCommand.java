@@ -3,11 +3,13 @@ package org.poo.system.command;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.poo.io.IOUtils;
 import org.poo.system.BankingSystem;
+import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.InputException;
 import org.poo.system.exceptions.OperationException;
 import org.poo.system.exceptions.OwnershipException;
 import org.poo.system.exceptions.handlers.CommandDescriptionHandler;
+import org.poo.system.exchange.Amount;
 import org.poo.system.user.Account;
 
 public class AddInterestCommand extends Command.Base {
@@ -38,12 +40,20 @@ public class AddInterestCommand extends Command.Base {
                     );
         }
 
+        Amount rateAmount = new Amount(
+                targetAccount.getFunds().total()
+                * targetAccount.getInterest(), targetAccount.getCurrency());
+
         // Add the interest
         targetAccount.setFunds(
                 targetAccount.getFunds()
-                        .add(targetAccount.getFunds().total()
-                                        * targetAccount.getInterest()
-                        )
+                        .add(rateAmount)
+        );
+
+        targetAccount.getTransactions().add(
+                new Transaction.InterestPayout("Interest rate income", timestamp)
+                        .setAmount(rateAmount.total())
+                        .setCurrency(targetAccount.getCurrency())
         );
 
     }

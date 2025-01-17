@@ -28,8 +28,7 @@ public final class TransactionStrategy extends CommerciantStrategy.Base {
 
         if (data.getTransactionCount() == commerciantType.getTransactionThreshold()) {
             return new Amount(
-                    amount.total()
-                            - amount.total()
+                            amount.total()
                             * commerciantType.getTransactionCashback(),
                     amount.currency()
             );

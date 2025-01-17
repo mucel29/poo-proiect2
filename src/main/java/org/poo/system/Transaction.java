@@ -150,7 +150,7 @@ public interface Transaction extends NodeConvertable, Cloneable, Comparable<Tran
          */
         @Override
         public double getAmount() {
-            Field f = ReflectionUtils.findField("total", this);
+            Field f = ReflectionUtils.findField("amount", this);
             if (f != null) {
                 f.setAccessible(true);
                 try {
@@ -281,6 +281,22 @@ public interface Transaction extends NodeConvertable, Cloneable, Comparable<Tran
         private double amount;
 
         public CashWithdrawal(
+                final String description,
+                final int timestamp
+        ) {
+            super(description, timestamp);
+        }
+    }
+
+    /**
+     * An interest rate payout
+     */
+    @Setter @Accessors(chain = true)
+    class InterestPayout extends Base {
+        private double amount;
+        private String currency;
+
+        public InterestPayout(
                 final String description,
                 final int timestamp
         ) {

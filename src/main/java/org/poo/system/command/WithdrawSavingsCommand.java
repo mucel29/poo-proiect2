@@ -79,7 +79,7 @@ public class WithdrawSavingsCommand extends Command.Base {
             throw new OperationException(
                     "You do not have a classic account.",
                     "You do not have a classic account.",
-                    new CommandDescriptionHandler(this)
+                    new TransactionHandler(savingsAccount, timestamp)
             );
         }
 
