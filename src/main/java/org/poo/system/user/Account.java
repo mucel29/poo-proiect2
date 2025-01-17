@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.poo.io.StateWriter;
 import org.poo.system.Transaction;
+import org.poo.system.commerce.cashback.CommerciantData;
 import org.poo.system.exceptions.InputException;
 import org.poo.utils.NodeConvertable;
 
@@ -66,6 +67,7 @@ public class Account implements NodeConvertable {
 
     private final List<Card> cards = new ArrayList<>();
     private final List<Transaction> transactions = new ArrayList<>();
+    private final List<CommerciantData> commerciantData = new ArrayList<>();
 
     public Account(
             final User owner,

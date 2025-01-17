@@ -1,5 +1,7 @@
 package org.poo.utils;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.Random;
 import java.util.regex.Pattern;
 
@@ -64,6 +66,14 @@ public final class Utils {
         }
 
         return sb.toString();
+    }
+
+    /**
+     * Parses a {@code LocalDate}
+     * @throws DateTimeParseException if the date could not be parsed
+     */
+    public static LocalDate parseDate(final String dateString) throws DateTimeParseException {
+        return LocalDate.parse(dateString);
     }
 
     /**

@@ -11,25 +11,28 @@ import org.poo.system.exchange.Exchange;
 import org.poo.system.exchange.ExchangeProvider;
 import org.poo.system.storage.MappedStorage;
 import org.poo.system.storage.StorageProvider;
+import org.poo.system.commerce.Commerciant;
 import org.poo.system.user.User;
 import org.poo.utils.Utils;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 @Getter
 public final class BankingSystem {
 
+    private final LocalDate currentDate = LocalDate.now();
     private final List<Command> commands = new ArrayList<>();
 
     private ExchangeProvider exchangeProvider;
     private StorageProvider storageProvider;
 
     // Set to true to see unhandled errors and detailed messages
-    public static final boolean VERBOSE_LOGGING = false;
+    public static final boolean VERBOSE_LOGGING = true;
 
     private BankingSystem() {
 
@@ -83,18 +86,16 @@ public final class BankingSystem {
 
         // Read users
         JsonNode usersNode = root.get("users");
-        if (usersNode == null) {
-            throw new InputException("No users found");
-        }
         User.readArray(usersNode)
                 .forEach(user -> instance.storageProvider.registerUser(user));
 
+        // Read commerciants
+        JsonNode commerciantsNode = root.get("commerciants");
+        Commerciant.readArray(commerciantsNode)
+                .forEach(commerciant -> instance.storageProvider.registerCommerciant(commerciant));
+
         // Read exchange rates
         JsonNode exchangeNode = root.get("exchangeRates");
-        if (exchangeNode == null) {
-            throw new InputException("No exchange rates found");
-        }
-
         getExchangeProvider().registerExchanges(
                 Exchange.readArray(exchangeNode)
         );

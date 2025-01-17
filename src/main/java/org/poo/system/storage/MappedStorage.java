@@ -5,6 +5,7 @@ import org.poo.system.exceptions.OwnershipException;
 import org.poo.system.exceptions.UserNotFoundException;
 import org.poo.system.user.Account;
 import org.poo.system.user.Card;
+import org.poo.system.commerce.Commerciant;
 import org.poo.system.user.User;
 import org.poo.utils.Utils;
 
@@ -20,6 +21,7 @@ import java.util.Map;
 public final class MappedStorage implements StorageProvider {
 
     private final List<User> userList = new ArrayList<>();
+    private final List<Commerciant> commerciantList = new ArrayList<>();
 
     private final Map<String, User> users = new HashMap<>();
     private final Map<String, Account> accounts = new HashMap<>();
@@ -27,8 +29,16 @@ public final class MappedStorage implements StorageProvider {
 
     private final Map<String, Account> aliases = new HashMap<>();
 
+    private final Map<String, Commerciant> commerciantsByIBAN = new HashMap<>();
+    private final Map<String, Commerciant> commerciantsByName = new HashMap<>();
+
+
     private boolean isRegistered(final User user) {
         return userList.contains(user);
+    }
+
+    private boolean isRegistered(final Commerciant commerciant) {
+        return commerciantList.contains(commerciant);
     }
 
     private boolean isRegistered(final Account account) {
@@ -53,6 +63,27 @@ public final class MappedStorage implements StorageProvider {
 
         users.put(user.getEmail(), user);
         userList.add(user);
+    }
+
+    /**
+     * Registers an {@code Commerciant} into the storage
+     *
+     * @param commerciant the {@code Commerciant} to register
+     * @throws StorageException if the commerciant already exists
+     */
+    @Override
+    public void registerCommerciant(final Commerciant commerciant) throws StorageException {
+        if (isRegistered(commerciant)) {
+            throw new StorageException(
+                    "Commerciant "
+                            + commerciant.getName()
+                            + " is already registered"
+            );
+        }
+
+        commerciantsByIBAN.put(commerciant.getAccountIBAN(), commerciant);
+        commerciantsByName.put(commerciant.getName(), commerciant);
+        commerciantList.add(commerciant);
     }
 
     /**
@@ -285,6 +316,38 @@ public final class MappedStorage implements StorageProvider {
         }
 
         return accounts.get(iban).getOwner();
+    }
+
+    /**
+     * Finds a commerciant
+     *
+     * @param iban the IBAN of the commerciant
+     * @return the requested commerciant
+     * @throws UserNotFoundException if no commerciant exists with the given IBAN
+     */
+    @Override
+    public Commerciant getCommerciantByIban(final String iban) throws UserNotFoundException {
+        if (!commerciantsByIBAN.containsKey(iban)) {
+            throw new UserNotFoundException("No commerciant found using IBAN: " + iban);
+        }
+
+        return commerciantsByIBAN.get(iban);
+    }
+
+    /**
+     * Finds a commerciant
+     *
+     * @param name the IBAN of the commerciant
+     * @return the requested commerciant
+     * @throws UserNotFoundException if no commerciant exists with the given name
+     */
+    @Override
+    public Commerciant getCommerciantByName(final String name) throws UserNotFoundException {
+        if (!commerciantsByName.containsKey(name)) {
+            throw new UserNotFoundException("No commerciant found using name: " + name);
+        }
+
+        return commerciantsByName.get(name);
     }
 
     /**

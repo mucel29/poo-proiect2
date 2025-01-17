@@ -5,6 +5,7 @@ import org.poo.system.exceptions.OwnershipException;
 import org.poo.system.exceptions.UserNotFoundException;
 import org.poo.system.user.Account;
 import org.poo.system.user.Card;
+import org.poo.system.commerce.Commerciant;
 import org.poo.system.user.User;
 
 import java.util.List;
@@ -18,6 +19,14 @@ public interface StorageProvider {
      * @throws StorageException if the user already exists
      */
     void registerUser(User user) throws StorageException;
+
+    /**
+     * Registers an {@code Commerciant} into the storage
+     *
+     * @param commerciant the {@code Commerciant} to register
+     * @throws StorageException if the commerciant already exists
+     */
+    void registerCommerciant(Commerciant commerciant) throws StorageException;
 
     /**
      * Registers an {@code Account} into the storage
@@ -100,6 +109,25 @@ public interface StorageProvider {
      * @throws UserNotFoundException if no user owns an account with the given IBAN
      */
     User getUserByIban(String iban) throws UserNotFoundException;
+
+    /**
+     * Finds a commerciant
+     *
+     * @param iban the IBAN of the commerciant
+     * @return the requested commerciant
+     * @throws UserNotFoundException if no commerciant exists with the given IBAN
+     */
+    Commerciant getCommerciantByIban(String iban) throws UserNotFoundException;
+
+    /**
+     * Finds a commerciant
+     *
+     * @param name the IBAN of the commerciant
+     * @return the requested commerciant
+     * @throws UserNotFoundException if no commerciant exists with the given name
+     */
+    Commerciant getCommerciantByName(String name) throws UserNotFoundException;
+
 
     /**
      * Finds an account

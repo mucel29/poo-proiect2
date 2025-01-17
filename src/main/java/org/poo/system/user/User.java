@@ -11,8 +11,13 @@ import org.poo.system.BankingSystem;
 import org.poo.system.Transaction;
 import org.poo.system.exceptions.InputException;
 import org.poo.system.exceptions.OwnershipException;
+import org.poo.system.user.plan.ServicePlan;
+import org.poo.system.user.plan.StandardPlan;
+import org.poo.system.user.plan.StudentPlan;
 import org.poo.utils.NodeConvertable;
 
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -24,17 +29,26 @@ public class User implements NodeConvertable {
     private final String firstName;
     private final String lastName;
     private final String email;
+    private final String occupation;
+    private final LocalDate birthDate;
 
     private final List<Account> accounts = new ArrayList<>();
+    private ServicePlan servicePlan;
 
     public User(
             final String firstName,
             final String lastName,
-            final String email
+            final String email,
+            final String occupation,
+            final LocalDate birthDate,
+            final ServicePlan servicePlan
     ) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
+        this.occupation = occupation;
+        this.birthDate = birthDate;
+        this.servicePlan = servicePlan;
     }
 
     /**
@@ -52,8 +66,21 @@ public class User implements NodeConvertable {
         String firstNameField = IOUtils.readStringChecked(node, "firstName");
         String lastNameField = IOUtils.readStringChecked(node, "lastName");
         String emailField = IOUtils.readStringChecked(node, "email");
+        String occupationField = IOUtils.readStringChecked(node, "occupation");
+        LocalDate birthDateField = IOUtils.readDateChecked(node, "birthDate");
 
-        return new User(firstNameField, lastNameField, emailField);
+        ServicePlan plan = occupationField.equals("student")
+                ? new StudentPlan()
+                : new StandardPlan();
+
+        return new User(
+                firstNameField,
+                lastNameField,
+                emailField,
+                occupationField,
+                birthDateField,
+                plan
+        );
     }
 
     /**
@@ -63,6 +90,10 @@ public class User implements NodeConvertable {
      * @throws InputException if the given node is not an array
      */
     public static List<User> readArray(final JsonNode node) throws InputException {
+        if (node == null) {
+            throw new InputException("No users found");
+        }
+
         if (!node.isArray()) {
             throw new InputException("User list is not an array");
         }
@@ -150,6 +181,14 @@ public class User implements NodeConvertable {
                 email,
                 accounts
         );
+    }
+
+    /**
+     * Gets the {@code User}'s current age
+     * @return the {@code User}'s age
+     */
+    public Period getAge() {
+        return Period.between(birthDate, BankingSystem.getInstance().getCurrentDate());
     }
 
     /**

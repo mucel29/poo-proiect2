@@ -2,6 +2,10 @@ package org.poo.io;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.poo.system.exceptions.InputException;
+import org.poo.utils.Utils;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 
 public final class IOUtils {
 
@@ -87,6 +91,26 @@ public final class IOUtils {
         }
 
         return value;
+    }
+
+    /**
+     * Reads a field and checks if it's a {@code LocalDate}
+     * @param node the node to read from
+     * @param fieldName the field to read
+     * @return the field's value
+     * @throws InputException if the field is not present, or it is not a valid date
+     */
+    public static LocalDate readDateChecked(
+            final JsonNode node,
+            final String fieldName
+    ) throws InputException {
+        String date = IOUtils.readStringChecked(node, fieldName);
+
+        try {
+            return Utils.parseDate(date);
+        } catch (DateTimeParseException e) {
+            throw new InputException(fieldName + " is invalid\n" + node.toPrettyString());
+        }
     }
 
 }

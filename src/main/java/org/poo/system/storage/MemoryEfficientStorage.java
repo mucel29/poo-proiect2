@@ -5,6 +5,7 @@ import org.poo.system.exceptions.OwnershipException;
 import org.poo.system.exceptions.UserNotFoundException;
 import org.poo.system.user.Account;
 import org.poo.system.user.Card;
+import org.poo.system.commerce.Commerciant;
 import org.poo.system.user.User;
 import org.poo.utils.Utils;
 
@@ -22,9 +23,14 @@ import java.util.stream.Collectors;
 public final class MemoryEfficientStorage implements StorageProvider {
 
     private final List<User> users = new ArrayList<>();
+    private final List<Commerciant> commerciants = new ArrayList<>();
 
     private boolean isRegistered(final User user) {
         return users.contains(user);
+    }
+
+    private boolean isRegistered(final Commerciant commerciant) {
+        return commerciants.contains(commerciant);
     }
 
     private boolean isRegistered(final Account account) {
@@ -55,6 +61,25 @@ public final class MemoryEfficientStorage implements StorageProvider {
             throw new StorageException("User " + user.getEmail() + " is already registered");
         }
         users.add(user);
+    }
+
+    /**
+     * Registers an {@code Commerciant} into the storage
+     *
+     * @param commerciant the {@code Commerciant} to register
+     * @throws StorageException if the commerciant already exists
+     */
+    @Override
+    public void registerCommerciant(final Commerciant commerciant) throws StorageException {
+        if (isRegistered(commerciant)) {
+            throw new StorageException(
+                    "Commerciant "
+                            + commerciant.getName()
+                            + " is already registered"
+            );
+        }
+
+        commerciants.add(commerciant);
     }
 
     /**
@@ -291,6 +316,46 @@ public final class MemoryEfficientStorage implements StorageProvider {
         }
 
         return user.get();
+    }
+
+    /**
+     * Finds a commerciant
+     *
+     * @param iban the IBAN of the commerciant
+     * @return the requested commerciant
+     * @throws UserNotFoundException if no commerciant exists with the given IBAN
+     */
+    @Override
+    public Commerciant getCommerciantByIban(final String iban) throws UserNotFoundException {
+        Optional<Commerciant> commerciant = commerciants.stream().filter(
+                comm -> comm.getAccountIBAN().equals(iban)
+        ).findFirst();
+
+        if (commerciant.isEmpty()) {
+            throw new UserNotFoundException("No commerciant found using IBAN: " + iban);
+        }
+
+        return commerciant.get();
+    }
+
+    /**
+     * Finds a commerciant
+     *
+     * @param name the IBAN of the commerciant
+     * @return the requested commerciant
+     * @throws UserNotFoundException if no commerciant exists with the given name
+     */
+    @Override
+    public Commerciant getCommerciantByName(final String name) throws UserNotFoundException {
+        Optional<Commerciant> commerciant = commerciants.stream().filter(
+                comm -> comm.getName().equals(name)
+        ).findFirst();
+
+        if (commerciant.isEmpty()) {
+            throw new UserNotFoundException("No commerciant found using name: " + name);
+        }
+
+        return commerciant.get();
     }
 
     /**

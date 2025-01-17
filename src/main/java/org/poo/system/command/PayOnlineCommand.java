@@ -3,6 +3,7 @@ package org.poo.system.command;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.poo.io.IOUtils;
 import org.poo.system.BankingSystem;
+import org.poo.system.commerce.Commerciant;
 import org.poo.system.exceptions.InputException;
 import org.poo.system.exceptions.handlers.CommandDescriptionHandler;
 import org.poo.system.exceptions.handlers.TransactionHandler;
@@ -23,7 +24,7 @@ public class PayOnlineCommand extends Command.Base {
     private final double amount;
     private final String currency;
     private final String description;
-    private final String commerciant;
+    private final String commerciantName;
 
     public PayOnlineCommand(
             final String email,
@@ -31,7 +32,7 @@ public class PayOnlineCommand extends Command.Base {
             final double amount,
             final String currency,
             final String description,
-            final String commerciant
+            final String commerciantName
     ) {
         super(Command.Type.PAY_ONLINE);
         this.email = email;
@@ -39,7 +40,7 @@ public class PayOnlineCommand extends Command.Base {
         this.amount = amount;
         this.currency = currency;
         this.description = description;
-        this.commerciant = commerciant;
+        this.commerciantName = commerciantName;
     }
 
     /**
@@ -118,14 +119,23 @@ public class PayOnlineCommand extends Command.Base {
                         + " "
                         + targetAccount.getCurrency()
                         + ") to "
-                        + commerciant
+                        + commerciantName
         );
 
         // Emmit payment transaction
         targetAccount.getTransactions().add(
                 new Transaction.Payment("Card payment", timestamp)
-                        .setCommerciant(commerciant)
+                        .setCommerciant(commerciantName)
                         .setAmount(deducted)
+        );
+
+        Commerciant commerciant = BankingSystem
+                .getStorageProvider()
+                .getCommerciantByName(commerciantName);
+
+        commerciant.getStrategy().apply(
+                targetAccount,
+                amount * BankingSystem.getExchangeProvider().getRate(currency, "RON")
         );
 
         // Generate a new one time card

@@ -24,6 +24,7 @@ import org.poo.system.command.SendMoneyCommand;
 import org.poo.system.command.SetAliasCommand;
 import org.poo.system.command.SpendingReportCommand;
 import org.poo.system.command.SplitPayCommand;
+import org.poo.system.command.WithdrawSavingsCommand;
 import org.poo.system.exceptions.InputException;
 import org.poo.system.user.Card;
 
@@ -113,6 +114,10 @@ public interface Command {
         SPENDINGS_REPORT(
                 "spendingsReport",
                 SpendingReportCommand::fromNode
+        ),
+        WITHDRAW_SAVINGS(
+                "withdrawSavings",
+                WithdrawSavingsCommand::fromNode
         ),
 
         PRINT_TRANSACTIONS(

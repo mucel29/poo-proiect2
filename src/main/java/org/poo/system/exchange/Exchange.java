@@ -44,6 +44,10 @@ public record Exchange(String from, String to, double rate) {
      * or an {@code Exchange} could not be deserialized
      */
     public static List<Exchange> readArray(final JsonNode node) throws InputException {
+        if (node == null) {
+            throw new InputException("No exchange rates found");
+        }
+
         if (!node.isArray()) {
             throw new InputException("Exchange rates is not an array node");
         }
