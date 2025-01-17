@@ -11,12 +11,12 @@ import org.poo.system.exceptions.OwnershipException;
 import org.poo.system.exceptions.UserNotFoundException;
 import org.poo.system.exceptions.handlers.CommandDescriptionHandler;
 import org.poo.system.exceptions.handlers.TransactionHandler;
+import org.poo.system.exchange.Amount;
 import org.poo.system.user.Account;
 import org.poo.system.user.Card;
 import org.poo.system.user.User;
-import org.poo.system.user.plan.ServicePlan;
 
-public class CashWithdrawCommand extends Command.Base{
+public class CashWithdrawCommand extends Command.Base {
 
     private final String cardNumber;
     private final double amount;
@@ -74,11 +74,14 @@ public class CashWithdrawCommand extends Command.Base{
             );
         }
 
-        double convertedAmount = amount * BankingSystem.getExchangeProvider().getRate(
-                "RON", targetAccount.getCurrency()
-        );
+        Amount requestedAmount = new Amount(amount, "RON");
 
-        if (convertedAmount > targetAccount.getFunds()) {
+        Amount targetAmount = requestedAmount.to(targetAccount.getCurrency());
+
+        targetAmount = targetUser.getServicePlan().applyFee(targetAmount);
+
+
+        if (targetAccount.getFunds().total() < targetAmount.total()) {
             throw new OperationException(
                     "Insufficient funds",
                     "Account "
@@ -88,7 +91,7 @@ public class CashWithdrawCommand extends Command.Base{
             );
         }
 
-        if (targetAccount.getFunds() - convertedAmount < targetAccount.getMinBalance()) {
+        if (targetAccount.getFunds().sub(targetAmount).total() < targetAccount.getMinBalance()) {
             throw new OperationException(
                     "Cannot perform payment due to a minimum balance being set",
                     "Account "
@@ -98,8 +101,7 @@ public class CashWithdrawCommand extends Command.Base{
             );
         }
 
-        targetAccount.setFunds(targetAccount.getFunds() - convertedAmount);
-        targetUser.getServicePlan().applyFee(targetAccount, amount);
+        targetAccount.setFunds(targetAccount.getFunds().sub(targetAmount));
 
         targetAccount.getTransactions().add(
                 new Transaction.CashWithdrawal("Cash withdrawal of " + amount, timestamp)

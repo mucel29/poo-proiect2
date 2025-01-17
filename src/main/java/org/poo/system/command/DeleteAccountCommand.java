@@ -51,7 +51,7 @@ public class DeleteAccountCommand extends Command.Base {
         Account targetAccount = BankingSystem.getStorageProvider().getAccountByIban(account);
 
         // If the user still has funds, generate errors
-        if (targetAccount.getFunds() > 0) {
+        if (targetAccount.getFunds().total() > 0) {
             throw new OperationException(
                     "Account couldn't be deleted - see org.poo.transactions for details",
                     "Account " + account + " still has funds!",

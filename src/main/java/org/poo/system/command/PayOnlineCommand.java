@@ -7,6 +7,7 @@ import org.poo.system.commerce.Commerciant;
 import org.poo.system.exceptions.InputException;
 import org.poo.system.exceptions.handlers.CommandDescriptionHandler;
 import org.poo.system.exceptions.handlers.TransactionHandler;
+import org.poo.system.exchange.Amount;
 import org.poo.system.exchange.ExchangeException;
 import org.poo.system.exceptions.OperationException;
 import org.poo.system.exceptions.OwnershipException;
@@ -21,16 +22,14 @@ public class PayOnlineCommand extends Command.Base {
 
     private final String email;
     private final String cardNumber;
-    private final double amount;
-    private final String currency;
+    private final Amount amount;
     private final String description;
     private final String commerciantName;
 
     public PayOnlineCommand(
             final String email,
             final String cardNumber,
-            final double amount,
-            final String currency,
+            final Amount amount,
             final String description,
             final String commerciantName
     ) {
@@ -38,7 +37,6 @@ public class PayOnlineCommand extends Command.Base {
         this.email = email;
         this.cardNumber = cardNumber;
         this.amount = amount;
-        this.currency = currency;
         this.description = description;
         this.commerciantName = commerciantName;
     }
@@ -82,47 +80,48 @@ public class PayOnlineCommand extends Command.Base {
             );
         }
 
-        if (amount <= 0.0) {
+        if (amount.total() <= 0.0) {
             BankingSystem.log("Tried to pay 0.0 to " + commerciantName);
             return;
         }
 
+        Commerciant commerciant = BankingSystem
+                .getStorageProvider()
+                .getCommerciantByName(commerciantName);
+
         // Convert from requested currency to the account's currency
-        double deducted = amount * BankingSystem.getExchangeProvider().getRate(
-                currency,
-                targetAccount.getCurrency()
-        );
+        Amount originalAmount = amount.to(targetAccount.getCurrency());
+
+        // Apply service fee & available cashbacks
+        Amount processedAmount = targetAccount.getOwner().getServicePlan().applyFee(originalAmount)
+                .sub(commerciant.getStrategy().apply(
+                        targetAccount,
+                        originalAmount
+                ));
+
 
         // Check if the account has enough funds for the payment
-        if (targetAccount.getFunds() < deducted) {
+        if (targetAccount.getFunds().total() < processedAmount.total()) {
             throw new OperationException(
                     "Insufficient funds",
                     "Not enough balance: "
                             + targetAccount.getFunds()
                             + " (wanted to pay "
-                            + deducted
-                            + " "
-                            + targetAccount.getCurrency()
+                            + processedAmount
                             + ") ["
                             + amount
-                            + " "
-                            + currency
                             + "]",
                     new TransactionHandler(targetAccount, timestamp)
             );
         }
 
         // Deduct from the account's funds
-        targetAccount.setFunds(targetAccount.getFunds() - deducted);
+        targetAccount.setFunds(targetAccount.getFunds().sub(processedAmount));
         BankingSystem.log(
                 "Paid "
                         + amount
-                        + " "
-                        + currency
                         + " ("
-                        + deducted
-                        + " "
-                        + targetAccount.getCurrency()
+                        + processedAmount
                         + ") to "
                         + commerciantName
         );
@@ -131,21 +130,10 @@ public class PayOnlineCommand extends Command.Base {
         targetAccount.getTransactions().add(
                 new Transaction.Payment("Card payment", timestamp)
                         .setCommerciant(commerciantName)
-                        .setAmount(deducted)
+                        .setAmount(originalAmount.total())
         );
 
-        double ronAmount = amount * BankingSystem.getExchangeProvider().getRate(currency, "RON");
 
-        Commerciant commerciant = BankingSystem
-                .getStorageProvider()
-                .getCommerciantByName(commerciantName);
-
-        targetAccount.getOwner().getServicePlan().applyFee(targetAccount, ronAmount);
-
-        commerciant.getStrategy().apply(
-                targetAccount,
-                ronAmount
-        );
 
         // Generate a new one time card
         if (targetCard.getCardType() == Card.Type.ONE_TIME) {
@@ -182,7 +170,13 @@ public class PayOnlineCommand extends Command.Base {
                 IOUtils.readStringChecked(node, "currency")
         );
 
-        return new PayOnlineCommand(email, cardNumber, amount, currency, description, commerciant);
+        return new PayOnlineCommand(
+                email,
+                cardNumber,
+                new Amount(amount, currency),
+                description,
+                commerciant
+        );
     }
 
 }

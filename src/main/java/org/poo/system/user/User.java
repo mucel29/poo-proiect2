@@ -13,8 +13,7 @@ import org.poo.system.Transaction;
 import org.poo.system.exceptions.InputException;
 import org.poo.system.exceptions.OwnershipException;
 import org.poo.system.user.plan.ServicePlan;
-import org.poo.system.user.plan.StandardPlan;
-import org.poo.system.user.plan.StudentPlan;
+import org.poo.system.user.plan.ServicePlanFactory;
 import org.poo.utils.NodeConvertable;
 
 import java.time.LocalDate;
@@ -43,15 +42,19 @@ public class User implements NodeConvertable {
             final String lastName,
             final String email,
             final String occupation,
-            final LocalDate birthDate,
-            final ServicePlan servicePlan
+            final LocalDate birthDate
     ) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
         this.occupation = occupation;
         this.birthDate = birthDate;
-        this.servicePlan = servicePlan;
+        this.servicePlan = ServicePlanFactory.getPlan(
+                this,
+                occupation.equals("student")
+                        ? ServicePlan.Tier.STUDENT
+                        : ServicePlan.Tier.STANDARD
+        );
     }
 
     /**
@@ -72,17 +75,12 @@ public class User implements NodeConvertable {
         String occupationField = IOUtils.readStringChecked(node, "occupation");
         LocalDate birthDateField = IOUtils.readDateChecked(node, "birthDate");
 
-        ServicePlan plan = occupationField.equals("student")
-                ? new StudentPlan()
-                : new StandardPlan();
-
         return new User(
                 firstNameField,
                 lastNameField,
                 emailField,
                 occupationField,
-                birthDateField,
-                plan
+                birthDateField
         );
     }
 

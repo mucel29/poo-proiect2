@@ -41,8 +41,9 @@ public class AddInterestCommand extends Command.Base {
         // Add the interest
         targetAccount.setFunds(
                 targetAccount.getFunds()
-                        + targetAccount.getInterest()
-                        * targetAccount.getInterest()
+                        .add(targetAccount.getFunds().total()
+                                        * targetAccount.getInterest()
+                        )
         );
 
     }

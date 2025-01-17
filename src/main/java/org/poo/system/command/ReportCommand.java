@@ -49,7 +49,7 @@ public class ReportCommand extends Command.Base {
 
         // Print the account's transaction record
         super.output((root) -> {
-            root.put("balance", targetAccount.getFunds());
+            root.put("balance", targetAccount.getFunds().total());
             root.put("IBAN", account);
             root.put("currency", targetAccount.getCurrency());
             ArrayNode arr = root.putArray("transactions");

@@ -1,7 +1,7 @@
 package org.poo.system.commerce.cashback;
 
-import org.poo.system.BankingSystem;
 import org.poo.system.commerce.Commerciant;
+import org.poo.system.exchange.Amount;
 import org.poo.system.user.Account;
 
 public final class TransactionStrategy extends CommerciantStrategy.Base {
@@ -11,33 +11,30 @@ public final class TransactionStrategy extends CommerciantStrategy.Base {
     }
 
     /**
-     * Applies the strategy on the given account
-     *
-     * @param account the account on which to apply the strategy on
-     * @param amount  the amount to be paid in RON
+     * Applies a cashback based on the number of transactions made to a category
+     * {@inheritDoc}
      */
     @Override
-    public void apply(
+    public Amount apply(
             final Account account,
-            final double amount
+            final Amount amount
     ) {
         CommerciantData data = super.getCommerciantData(account);
-        data.setSpending(data.getSpending() + amount);
+        data.setSpending(
+                data.getSpending()
+                        + amount.to("RON").total()
+        );
         data.setTransactionCount(data.getTransactionCount() + 1);
 
         if (data.getTransactionCount() == commerciantType.getTransactionThreshold()) {
-            double convertedAmount =
-                    amount
-                    * BankingSystem
-                        .getExchangeProvider()
-                        .getRate(
-                                "RON", account.getCurrency()
-                        );
-            account.setFunds(
-                    account.getFunds()
-                            + convertedAmount * commerciantType.getTransactionThreshold()
+            return new Amount(
+                    amount.total()
+                            - amount.total()
+                            * commerciantType.getTransactionCashback(),
+                    amount.currency()
             );
         }
 
+        return new Amount(0, amount.currency());
     }
 }

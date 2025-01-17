@@ -64,7 +64,7 @@ public class SpendingReportCommand extends Command.Base {
         // Transactions to commerciants,
         // Commerciant spending
         super.output((root) -> {
-            root.put("balance", targetAccount.getFunds());
+            root.put("balance", targetAccount.getFunds().total());
             root.put("IBAN", account);
             root.put("currency", targetAccount.getCurrency());
             ArrayNode arr = root.putArray("transactions");

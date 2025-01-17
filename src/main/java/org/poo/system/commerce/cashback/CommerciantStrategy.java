@@ -2,6 +2,7 @@ package org.poo.system.commerce.cashback;
 
 import org.poo.system.commerce.Commerciant;
 import org.poo.system.exceptions.InputException;
+import org.poo.system.exchange.Amount;
 import org.poo.system.user.Account;
 
 import java.util.Arrays;
@@ -52,9 +53,10 @@ public interface CommerciantStrategy {
      * Applies the strategy on the given account
      *
      * @param account the account on which to apply the strategy on
-     * @param amount the amount to be paid in RON
+     * @param amount the total to be paid
+     * @return the new total
      */
-    void apply(Account account, double amount);
+    Amount apply(Account account, Amount amount);
 
     abstract class Base implements CommerciantStrategy {
         protected final Commerciant.Type commerciantType;

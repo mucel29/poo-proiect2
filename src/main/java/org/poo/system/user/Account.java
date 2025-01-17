@@ -10,6 +10,7 @@ import org.poo.system.BankingSystem;
 import org.poo.system.Transaction;
 import org.poo.system.commerce.cashback.CommerciantData;
 import org.poo.system.exceptions.InputException;
+import org.poo.system.exchange.Amount;
 import org.poo.utils.NodeConvertable;
 
 import java.util.ArrayList;
@@ -54,7 +55,6 @@ public class Account implements NodeConvertable {
     private final User owner;
 
     private final String accountIBAN;
-    private final String currency;
     private final Type accountType;
 
     @Setter
@@ -62,7 +62,7 @@ public class Account implements NodeConvertable {
     @Setter
     private double interest;
     @Setter
-    private double funds = 0;
+    private Amount funds;
     @Setter
     private double minBalance = 0;
 
@@ -78,20 +78,27 @@ public class Account implements NodeConvertable {
     ) {
         this.owner = owner;
         this.accountIBAN = accountIBAN;
-        this.currency = currency;
+        this.funds = new Amount(0, currency);
         this.accountType = accountType;
     }
 
     /**
      * Here just for logging
      */
-    public Account setFunds(final double newFunds) {
+    public Account setFunds(final Amount newFunds) {
         BankingSystem.log(
                 "[" + owner.getEmail() + "]: " + accountIBAN
-                + " set funds from " + this.funds + " to " + newFunds
+                + " set funds from " + this.funds.total() + " to " + newFunds.total()
         );
         this.funds = newFunds;
         return this;
+    }
+
+    /**
+     * @return the account's currency
+     */
+    public String getCurrency() {
+        return this.funds.currency();
     }
 
     /**
@@ -101,9 +108,9 @@ public class Account implements NodeConvertable {
     public ObjectNode toNode() {
         ObjectNode root = StateWriter.getMapper().createObjectNode();
         root.put("IBAN", accountIBAN);
-        root.put("currency", currency);
+        root.put("currency", funds.currency());
         root.put("type", accountType.toString());
-        root.put("balance", funds);
+        root.put("balance", funds.total());
 
         ArrayNode cardsNode = root.putArray("cards");
         for (Card card : cards) {

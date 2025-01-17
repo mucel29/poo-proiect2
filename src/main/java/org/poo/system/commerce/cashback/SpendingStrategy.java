@@ -2,6 +2,7 @@ package org.poo.system.commerce.cashback;
 
 import lombok.Getter;
 import org.poo.system.commerce.Commerciant;
+import org.poo.system.exchange.Amount;
 import org.poo.system.user.Account;
 
 public final class SpendingStrategy extends CommerciantStrategy.Base {
@@ -22,17 +23,17 @@ public final class SpendingStrategy extends CommerciantStrategy.Base {
         /**
          * Computes the current spending tier
          *
-         * @param amount the spent amount
+         * @param amount the spent total
          * @return the corresponding tier
          */
-        public static Tier getTier(final double amount) {
+        public static int getTier(final double amount) {
             for (Tier tier : Tier.values()) {
                 if (amount >= tier.threshold) {
-                    return tier;
+                    return Tier.values().length - 1 - tier.ordinal();
                 }
             }
 
-            return TIER_0;
+            return 0;
         }
 
     }
@@ -41,25 +42,24 @@ public final class SpendingStrategy extends CommerciantStrategy.Base {
         super(commerciantType);
     }
 
-
     /**
-     * Applies the strategy on the given account
-     *
-     * @param account the account on which to apply the strategy on
-     * @param amount  the amount to be paid in RON
+     * Applies a cashback based on the total spent to a certain Commerciant
+     * {@inheritDoc}
      */
     @Override
-    public void apply(final Account account, final double amount) {
+    public Amount apply(final Account account, final Amount amount) {
         CommerciantData data = super.getCommerciantData(account);
-        data.setSpending(data.getSpending() + amount);
+        data.setSpending(
+                data.getSpending()
+                        + amount.to("RON").total()
+        );
         data.setTransactionCount(data.getTransactionCount() + 1);
 
-        account.getOwner()
+        return account.getOwner()
                 .getServicePlan()
-                .applySpendingCashback(
-                        account,
-                        Tier.getTier(data.getSpending()),
-                        amount
+                .getSpendingCashback(
+                        amount,
+                        Tier.getTier(data.getSpending())
                 );
 
     }

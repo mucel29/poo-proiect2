@@ -44,14 +44,14 @@ public class CheckCardCommand extends Command.Base {
         Account link = targetCard.getAccount();
 
         // Verify the account's balance
-        if (link.getFunds() <= link.getMinBalance()) {
+        if (link.getFunds().total() <= link.getMinBalance()) {
             // Freeze card
             targetCard.setActive(false);
             link.getTransactions().add(new Transaction.Base(
-                    "You have reached the minimum amount of funds, the card will be frozen",
+                    "You have reached the minimum total of funds, the card will be frozen",
                     timestamp
             ));
-        } else if (link.getFunds() - link.getMinBalance() <= WARNING_THRESHOLD) {
+        } else if (link.getFunds().total() - link.getMinBalance() <= WARNING_THRESHOLD) {
             // The account is nearing the minimum balance threshold
             // Issue a warning
             link.getTransactions().add(new Transaction.Base(

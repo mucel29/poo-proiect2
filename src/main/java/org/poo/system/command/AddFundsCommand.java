@@ -32,7 +32,7 @@ public class AddFundsCommand extends Command.Base {
         Account targetAccount = BankingSystem.getStorageProvider().getAccountByIban(this.account);
 
         // Add the funds to the account
-        targetAccount.setFunds(targetAccount.getFunds() + this.amount);
+        targetAccount.setFunds(targetAccount.getFunds().add(this.amount));
     }
 
     /**

@@ -5,20 +5,20 @@ import org.poo.io.IOUtils;
 import org.poo.system.BankingSystem;
 import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
-import org.poo.system.commerce.cashback.StrategyFactory;
 import org.poo.system.exceptions.InputException;
 import org.poo.system.exceptions.OperationException;
 import org.poo.system.exceptions.OwnershipException;
 import org.poo.system.exceptions.handlers.CommandDescriptionHandler;
 import org.poo.system.exceptions.handlers.TransactionHandler;
+import org.poo.system.exchange.Amount;
 import org.poo.system.user.Account;
 import org.poo.system.user.plan.ServicePlan;
+import org.poo.system.user.plan.ServicePlanFactory;
 
 public class UpgradePlanCommand extends Command.Base {
 
     private final String account;
     private final ServicePlan.Tier newTier;
-    private final boolean chargeUser;
 
     public UpgradePlanCommand(
             final String account,
@@ -27,18 +27,6 @@ public class UpgradePlanCommand extends Command.Base {
         super(Command.Type.UPGRADE_PLAN);
         this.account = account;
         this.newTier = newTier;
-        this.chargeUser = true;
-    }
-
-    public UpgradePlanCommand(
-            final String account,
-            final ServicePlan.Tier newTier,
-            final boolean chargeUser
-    ) {
-        super(Command.Type.UPGRADE_PLAN);
-        this.account = account;
-        this.newTier = newTier;
-        this.chargeUser = chargeUser;
     }
 
     /**
@@ -58,9 +46,9 @@ public class UpgradePlanCommand extends Command.Base {
             );
         }
 
-        ServicePlan.Tier currentTier = targetAccount.getOwner().getServicePlan().getTier();
+        ServicePlan currentPlan = targetAccount.getOwner().getServicePlan();
 
-        if (currentTier == newTier) {
+        if (currentPlan.getTier() == newTier) {
             throw new OperationException(
                     "The user already has the "
                         + newTier
@@ -72,26 +60,21 @@ public class UpgradePlanCommand extends Command.Base {
             );
         }
 
-        if (currentTier.compareTo(newTier) > 0) {
+
+        Amount upgradeFee;
+        try {
+            upgradeFee = currentPlan.getUpgradeFee(newTier);
+        } catch (OperationException e) {
             throw new OperationException(
                     "You cannot downgrade your plan.",
-                    "Current plan: " + currentTier
-                        + ", New plan: " + newTier,
+                    e.getMessage(),
                     new TransactionHandler(targetAccount, timestamp)
             );
         }
 
-        double upgradeFee = switch (newTier) {
-            case SILVER -> currentTier.getSilverUpgrade();
-            case GOLD -> currentTier.getGoldUpgrade();
-            default -> -1;
-        };
+        upgradeFee = upgradeFee.to(targetAccount.getCurrency());
 
-        upgradeFee *= BankingSystem.getExchangeProvider().getRate(
-                "RON", targetAccount.getCurrency()
-        );
-
-        if (chargeUser && upgradeFee > targetAccount.getFunds()) {
+        if (targetAccount.getFunds().total() < upgradeFee.total()) {
             throw new OperationException(
                     "Insufficient funds",
                     "upgradePlan: Insufficient funds",
@@ -99,16 +82,12 @@ public class UpgradePlanCommand extends Command.Base {
             );
         }
 
-        double oldBal = targetAccount.getFunds();
 
-        if (chargeUser) {
-            targetAccount.setFunds(targetAccount.getFunds() - upgradeFee);
-        }
+        targetAccount.setFunds(targetAccount.getFunds().sub(upgradeFee));
 
         BankingSystem.log(
                 "Upgraded " + targetAccount.getOwner().getEmail()
                         + " to " + newTier.toString()
-                        + " [" + oldBal + " -> " + targetAccount.getFunds() + "]"
         );
 
         targetAccount.getTransactions().add(
@@ -120,7 +99,7 @@ public class UpgradePlanCommand extends Command.Base {
 
 
         targetAccount.getOwner().setServicePlan(
-                StrategyFactory.getServicePlan(newTier)
+                ServicePlanFactory.getPlan(targetAccount.getOwner(), newTier)
         );
 
     }

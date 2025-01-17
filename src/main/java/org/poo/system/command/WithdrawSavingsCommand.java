@@ -10,6 +10,7 @@ import org.poo.system.exceptions.OwnershipException;
 import org.poo.system.exceptions.handlers.CommandDescriptionHandler;
 import org.poo.system.exceptions.handlers.CommandErrorHandler;
 import org.poo.system.exceptions.handlers.TransactionHandler;
+import org.poo.system.exchange.Amount;
 import org.poo.system.user.Account;
 
 import java.util.Optional;
@@ -19,18 +20,15 @@ public class WithdrawSavingsCommand extends Command.Base {
     private static final int MINIMUM_AGE = 21;
 
     private final String account;
-    private final double amount;
-    private final String currency;
+    private final Amount amount;
 
     public WithdrawSavingsCommand(
             final String account,
-            final double amount,
-            final String currency
+            final Amount amount
     ) {
         super(Command.Type.WITHDRAW_SAVINGS);
         this.account = account;
         this.amount = amount;
-        this.currency = currency;
     }
 
     /**
@@ -90,8 +88,8 @@ public class WithdrawSavingsCommand extends Command.Base {
                 .getAccounts()
                 .stream()
                 .filter(
-                        acc -> acc.getCurrency().equals(currency)
-                                && acc.getAccountType().equals(Account.Type.SAVINGS)
+                        acc -> acc.getCurrency().equals(amount.currency())
+                                && acc.getAccountType().equals(Account.Type.CLASSIC)
                 ).findFirst();
 
         // TODO: make ownership exception
@@ -106,21 +104,11 @@ public class WithdrawSavingsCommand extends Command.Base {
 
         Account targetAccount = target.get();
 
-        double toDeduce = amount
-                * BankingSystem.getExchangeProvider().getRate(
-                        currency, savingsAccount.getCurrency()
-        );
+        Amount senderAmount = amount.to(savingsAccount.getCurrency());
 
-        savingsAccount.getOwner().getServicePlan().applyFee(
-                savingsAccount,
-                toDeduce
-                        * BankingSystem.getExchangeProvider().getRate(
-                                savingsAccount.getCurrency(),
-                                "RON"
-                        )
-        );
+        senderAmount = savingsAccount.getOwner().getServicePlan().applyFee(senderAmount);
 
-        if (savingsAccount.getFunds() < amount) {
+        if (savingsAccount.getFunds().total() < senderAmount.total()) {
             throw new OperationException(
                     "Insufficient funds",
                     "Insufficient funds",
@@ -128,12 +116,13 @@ public class WithdrawSavingsCommand extends Command.Base {
             );
         }
 
-        savingsAccount.setFunds(savingsAccount.getFunds() - toDeduce);
-        targetAccount.setFunds(targetAccount.getFunds() + amount);
+        savingsAccount.setFunds(savingsAccount.getFunds().sub(senderAmount));
+        targetAccount.setFunds(targetAccount.getFunds().add(amount));
 
-        super.output(obj -> {
-            obj.put("description", "Savings withdrawal");
-        });
+        super.output(obj -> obj.put(
+                "description",
+                "Savings withdrawal"
+        ));
 
 
     }
@@ -149,7 +138,7 @@ public class WithdrawSavingsCommand extends Command.Base {
         double amount = IOUtils.readDoubleChecked(node, "amount");
         String currency = IOUtils.readStringChecked(node, "currency");
 
-        return new WithdrawSavingsCommand(account, amount, currency);
+        return new WithdrawSavingsCommand(account, new Amount(amount, currency));
     }
 
 }

@@ -13,6 +13,7 @@ import org.poo.system.exceptions.OwnershipException;
 import org.poo.system.exceptions.UserNotFoundException;
 import org.poo.system.exceptions.handlers.CommandDescriptionHandler;
 import org.poo.system.exceptions.handlers.TransactionHandler;
+import org.poo.system.exchange.Amount;
 import org.poo.system.user.Account;
 import org.poo.utils.Utils;
 
@@ -86,28 +87,24 @@ public class SendMoneyCommand extends Command.Base {
             return;
         }
 
-        // Convert the amount to be transferred to the receiver
-        double convertedAmount = amount * BankingSystem.getExchangeProvider().getRate(
-                senderAccount.getCurrency(),
-                receiverAccount.getCurrency()
-        );
+        Amount senderAmount = new Amount(amount, senderAccount.getCurrency());
 
-        double oldBal = senderAccount.getFunds();
+        // Convert the total to be transferred to the receiver
+        Amount receiverAmount = senderAmount.to(receiverAccount.getCurrency());
+
+        senderAmount =  senderAccount.getOwner().getServicePlan().applyFee(senderAmount);
+
 
         // Check if the sender has enough funds
-        if (senderAccount.getFunds() < amount) {
+        if (senderAccount.getFunds().total() < amount) {
             throw new OperationException(
                     "Insufficient funds",
                     "Not enough balance: "
                             + senderAccount.getFunds()
                             + " (wanted to send "
-                            + amount
-                            + " "
-                            + senderAccount.getCurrency()
+                            + senderAmount
                             + ") ["
-                            + convertedAmount
-                            + " "
-                            + receiverAccount.getCurrency()
+                            + receiverAmount
                             + "]",
                     new TransactionHandler(senderAccount, timestamp)
             );
@@ -121,25 +118,18 @@ public class SendMoneyCommand extends Command.Base {
                 .setCurrency(senderAccount.getCurrency())
                 .setTransferType(Transaction.TransferType.SENT);
 
-        // Deduct the amount from the sender's account and emmit a copy of the transaction
-        senderAccount.setFunds(senderAccount.getFunds() - amount);
+        // Deduct the total from the sender's account and emmit a copy of the transaction
+        senderAccount.setFunds(senderAccount.getFunds().sub(senderAmount));
         senderAccount.getTransactions().add(transaction.clone());
 
-        senderAccount.getOwner().getServicePlan()
-                .applyFee(
-                        senderAccount,
-                        amount
-                                * BankingSystem.getExchangeProvider().getRate(
-                                        senderAccount.getCurrency(), "RON"
-                        )
-                );
 
-        // Add the amount to the receiver's account and emmit a `received` transaction
-        receiverAccount.setFunds(receiverAccount.getFunds() + convertedAmount);
+
+        // Add the total to the receiver's account and emmit a `received` transaction
+        receiverAccount.setFunds(receiverAccount.getFunds().add(receiverAmount));
         receiverAccount.getTransactions().add(
                 transaction
                         .setCurrency(receiverAccount.getCurrency())
-                        .setAmount(convertedAmount)
+                        .setAmount(receiverAmount.total())
                         .setTransferType(Transaction.TransferType.RECEIVED)
         );
 
@@ -149,7 +139,7 @@ public class SendMoneyCommand extends Command.Base {
                         + " "
                         + senderAccount.getCurrency()
                         + " ("
-                        + convertedAmount
+                        + receiverAmount
                         + " "
                         + receiverAccount.getCurrency()
                         + ") to "
@@ -159,9 +149,6 @@ public class SendMoneyCommand extends Command.Base {
                         : " ["
                         + receiver
                         + "]")
-                        + " {" + oldBal
-                        + " -> " + senderAccount.getFunds()
-                        + "}"
         );
 
     }
