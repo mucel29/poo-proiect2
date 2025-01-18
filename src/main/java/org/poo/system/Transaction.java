@@ -241,8 +241,10 @@ public interface Transaction extends NodeConvertable, Cloneable, Comparable<Tran
      */
     @Setter @Accessors(chain = true)
     class SplitPayment extends Base {
+        private String splitPaymentType;
         private String currency;
-        private double amount;
+        private Double amount;
+        private List<Double> amountForUsers;
         private List<String> involvedAccounts;
 
         @Getter

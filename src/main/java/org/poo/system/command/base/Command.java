@@ -7,6 +7,7 @@ import lombok.Getter;
 import org.poo.io.IOUtils;
 import org.poo.io.StateWriter;
 import org.poo.system.BankingSystem;
+import org.poo.system.command.AcceptSplitCommand;
 import org.poo.system.command.AddAccountCommand;
 import org.poo.system.command.AddFundsCommand;
 import org.poo.system.command.AddInterestCommand;
@@ -16,6 +17,7 @@ import org.poo.system.command.CheckCardCommand;
 import org.poo.system.command.CreateCardCommand;
 import org.poo.system.command.DeleteAccountCommand;
 import org.poo.system.command.DeleteCardCommand;
+import org.poo.system.command.RejectSplitCommand;
 import org.poo.system.command.MinBalanceCommand;
 import org.poo.system.command.PayOnlineCommand;
 import org.poo.system.command.PrintTransactionsCommand;
@@ -128,6 +130,14 @@ public interface Command {
         CASH_WITHDRAWAL(
             "cashWithdrawal",
                 CashWithdrawCommand::fromNode
+        ),
+        ACCEPT_SPLIT(
+                "acceptSplitPayment",
+                AcceptSplitCommand::fromNode
+        ),
+        REJECT_SPLIT(
+                "rejectSplitPayment",
+                RejectSplitCommand::fromNode
         ),
 
         PRINT_TRANSACTIONS(

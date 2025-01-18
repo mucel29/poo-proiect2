@@ -102,6 +102,23 @@ public class Account implements NodeConvertable {
     }
 
     /**
+     * @param amount the amount to be paid
+     * @param canGoUnderMinimum if the funds can go under the minimum
+     * @return whether the account can pay the given amount
+     */
+    public boolean canPay(
+            final Amount amount,
+            final boolean canGoUnderMinimum
+    ) {
+        Amount newBalance = funds.sub(amount);
+        if (!canGoUnderMinimum) {
+            return newBalance.total() > minBalance;
+        }
+
+        return newBalance.total() > 0.0;
+    }
+
+    /**
      * @return the JSON representation of the Account
      */
     @Override

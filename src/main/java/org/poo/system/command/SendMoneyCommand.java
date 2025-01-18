@@ -96,7 +96,7 @@ public class SendMoneyCommand extends Command.Base {
 
 
         // Check if the sender has enough funds
-        if (senderAccount.getFunds().total() < amount) {
+        if (!senderAccount.canPay(senderAmount, true)) {
             throw new OperationException(
                     "Insufficient funds",
                     "Not enough balance: "

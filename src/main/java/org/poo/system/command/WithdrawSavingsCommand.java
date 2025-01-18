@@ -49,7 +49,7 @@ public class WithdrawSavingsCommand extends Command.Base {
         try {
             savingsAccount = BankingSystem.getStorageProvider().getAccountByIban(account);
         } catch (OwnershipException e) {
-            throw new OperationException(
+            throw new OwnershipException(
                     "Account not found",
                     e.getMessage(),
                     new CommandDescriptionHandler(this)
@@ -76,9 +76,9 @@ public class WithdrawSavingsCommand extends Command.Base {
         if (savingsAccount.getOwner().getAccounts().stream().noneMatch(
                 acc -> acc.getAccountType().equals(Account.Type.CLASSIC)
         )) {
-            throw new OperationException(
+            throw new OwnershipException(
                     "You do not have a classic account.",
-                    "You do not have a classic account.",
+                    null,
                     new TransactionHandler(savingsAccount, timestamp)
             );
         }
@@ -92,12 +92,10 @@ public class WithdrawSavingsCommand extends Command.Base {
                                 && acc.getAccountType().equals(Account.Type.CLASSIC)
                 ).findFirst();
 
-        // TODO: make ownership exception
-
         if (target.isEmpty()) {
-            throw new OperationException(
+            throw new OwnershipException(
                     "Account not found",
-                    "Account not found",
+                    null,
                     new CommandDescriptionHandler(this)
             );
         }
@@ -111,7 +109,7 @@ public class WithdrawSavingsCommand extends Command.Base {
         if (savingsAccount.getFunds().total() < senderAmount.total()) {
             throw new OperationException(
                     "Insufficient funds",
-                    "Insufficient funds",
+                    null,
                     new CommandDescriptionHandler(this)
             );
         }

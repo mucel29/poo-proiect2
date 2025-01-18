@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -42,11 +43,24 @@ public final class ReflectionUtils {
             } else if (field.getType().equals(Integer.TYPE)) {
                 root.put(field.getName(), field.getInt(caller));
             } else if (field.getType().isAssignableFrom(List.class)) {
-                // Only String lists supported
                 ArrayNode arr = root.putArray(field.getName());
-                List<?> fieldList = (List<?>) field.get(caller);
-                for (Object el : fieldList) {
-                    arr.add(el.toString());
+
+                // List<Double> support
+
+                // Get generic type and check if it's Double
+                Class<?> genericClass = (Class<?>) ((ParameterizedType) field.getGenericType())
+                        .getActualTypeArguments()[0];
+                if (genericClass.isAssignableFrom(Double.class)) {
+                    List<Double> fieldList = (List<Double>) field.get(caller);
+                    for (Double el : fieldList) {
+                        arr.add(el);
+                    }
+                } else {
+                    // Fallback to String
+                    List<?> fieldList = (List<?>) field.get(caller);
+                    for (Object el : fieldList) {
+                        arr.add(el.toString());
+                    }
                 }
             } else {
                     // Fallback to String

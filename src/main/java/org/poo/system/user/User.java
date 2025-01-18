@@ -12,6 +12,9 @@ import org.poo.system.BankingSystem;
 import org.poo.system.Transaction;
 import org.poo.system.exceptions.InputException;
 import org.poo.system.exceptions.OwnershipException;
+import org.poo.system.payments.PaymentObserver;
+import org.poo.system.payments.PaymentOrder;
+import org.poo.system.payments.PendingPayment;
 import org.poo.system.user.plan.ServicePlan;
 import org.poo.system.user.plan.ServicePlanFactory;
 import org.poo.utils.NodeConvertable;
@@ -25,7 +28,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Getter
-public class User implements NodeConvertable {
+public class User implements NodeConvertable, PaymentObserver {
     private final String firstName;
     private final String lastName;
     private final String email;
@@ -33,6 +36,7 @@ public class User implements NodeConvertable {
     private final LocalDate birthDate;
 
     private final List<Account> accounts = new ArrayList<>();
+    private final List<PendingPayment> pendingPayments = new ArrayList<>();
 
     @Setter
     private ServicePlan servicePlan;
@@ -208,5 +212,27 @@ public class User implements NodeConvertable {
         }
 
         return root;
+    }
+
+    /**
+     * Notifies the observer of a payment to be made
+     *
+     * @param order the payment order to execute
+     */
+    @Override
+    public void notify(final PaymentOrder order) {
+        order.account().setFunds(order.account().getFunds().sub(order.amount()));
+        order.account().getTransactions().add(order.transaction());
+
+        pendingPayments.remove(order.payment());
+    }
+
+    /**
+     * @param account the account to check
+     * @return whether the observer owns the given account
+     */
+    @Override
+    public boolean owns(final Account account) {
+        return accounts.contains(account);
     }
 }
