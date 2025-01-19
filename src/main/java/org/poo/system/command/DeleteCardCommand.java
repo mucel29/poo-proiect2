@@ -55,10 +55,12 @@ public class DeleteCardCommand extends Command.Base {
         // by retrieving the target card
         // and checking the owner's email with the provided email
         // but the storage provider also check if the user / account is registered
-        if (!targetCard.getAccount().getOwner().equals(targetUser)) {
-            throw new OwnershipException("Card " + cardNumber + " is not owned by " + email);
-        }
+//        if (!targetCard.getAccount().getOwner().equals(targetUser)) {
+//            throw new OwnershipException("Card " + cardNumber + " is not owned by " + email);
+//        }
+        targetCard.getAccount().authorizeCardDeletion(targetUser, targetCard);
 
+        // Might change card holder to creator
         // Generate destroy transaction on the associated account
         targetCard.getAccount().getTransactions().add(
                 new Transaction.CardOperation("The card has been destroyed", timestamp)
@@ -73,9 +75,7 @@ public class DeleteCardCommand extends Command.Base {
                         )
         );
 
-        // Remove the card from storage
-        BankingSystem.getStorageProvider().removeCard(targetCard);
-        BankingSystem.log("Deleted card: " + cardNumber);
+
     }
 
     /**

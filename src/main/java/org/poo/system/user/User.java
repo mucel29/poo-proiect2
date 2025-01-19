@@ -18,6 +18,7 @@ import org.poo.system.payments.PendingPayment;
 import org.poo.system.user.plan.ServicePlan;
 import org.poo.system.user.plan.ServicePlanFactory;
 import org.poo.utils.NodeConvertable;
+import org.poo.utils.Pair;
 
 import java.time.LocalDate;
 import java.time.Period;
@@ -25,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Getter
@@ -36,7 +38,7 @@ public class User implements NodeConvertable, PaymentObserver {
     private final LocalDate birthDate;
 
     private final List<Account> accounts = new ArrayList<>();
-    private final List<PendingPayment> pendingPayments = new ArrayList<>();
+    private final List<Pair<PendingPayment, Integer>> pendingPayments = new ArrayList<>();
 
     @Setter
     private ServicePlan servicePlan;
@@ -214,6 +216,37 @@ public class User implements NodeConvertable, PaymentObserver {
         return root;
     }
 
+    private Pair<PendingPayment, Integer> getOrder(
+            final PendingPayment payment
+    ) {
+        Optional<Pair<PendingPayment, Integer>> entry =
+                pendingPayments
+                        .stream()
+                        .filter(p -> p.first().equals(payment))
+                        .findFirst();
+
+        return entry.orElse(null);
+    }
+
+    /**
+     * Registers the pending payment to the observer
+     *
+     * @param payment the payment to register
+     */
+    @Override
+    public void register(final PendingPayment payment) {
+        var pending = getOrder(payment);
+
+        if (pending == null) {
+            pending = new Pair<>(payment, 1);
+            pendingPayments.add(pending);
+            return;
+        }
+
+        pendingPayments.remove(pending);
+        pendingPayments.add(new Pair<>(pending.first(), pending.second() + 1));
+    }
+
     /**
      * Notifies the observer of a payment to be made
      *
@@ -221,10 +254,20 @@ public class User implements NodeConvertable, PaymentObserver {
      */
     @Override
     public void notify(final PaymentOrder order) {
+        var entry = getOrder(order.payment());
+        if (entry == null) {
+            return;
+        }
+
         order.account().setFunds(order.account().getFunds().sub(order.amount()));
         order.account().getTransactions().add(order.transaction());
 
-        pendingPayments.remove(order.payment());
+        // Remove one account from the payment
+        // Don't add it back if all accounts are finished
+        pendingPayments.remove(entry);
+        if (entry.second() > 1) {
+            pendingPayments.add(new Pair<>(order.payment(), entry.second() - 1));
+        }
     }
 
     /**
@@ -234,5 +277,13 @@ public class User implements NodeConvertable, PaymentObserver {
     @Override
     public boolean owns(final Account account) {
         return accounts.contains(account);
+    }
+
+    /**
+     *{@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return email;
     }
 }

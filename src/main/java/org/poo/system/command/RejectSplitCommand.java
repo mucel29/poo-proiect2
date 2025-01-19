@@ -7,9 +7,10 @@ import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.InputException;
 import org.poo.system.exceptions.OperationException;
 import org.poo.system.exceptions.UserNotFoundException;
-import org.poo.system.exceptions.handlers.CommandErrorHandler;
+import org.poo.system.exceptions.handlers.CommandDescriptionHandler;
 import org.poo.system.payments.PendingPayment;
 import org.poo.system.user.User;
+import org.poo.utils.Pair;
 
 import java.util.Optional;
 
@@ -42,11 +43,12 @@ public class RejectSplitCommand extends Command.Base {
             throw new UserNotFoundException(
                     "User not found",
                     null,
-                    new CommandErrorHandler(this)
+                    new CommandDescriptionHandler(this)
             );
         }
 
-        Optional<PendingPayment> payment = targetUser.getPendingPayments().stream().filter(
+        Optional<PendingPayment> payment = targetUser.getPendingPayments()
+                .stream().map(Pair::first).filter(
                 pendingPayment -> pendingPayment.getType() == paymentType
                         && !pendingPayment.wasDealt(targetUser)
         ).findFirst();
@@ -55,7 +57,7 @@ public class RejectSplitCommand extends Command.Base {
             throw new OperationException("No pending " + paymentType + " payment found");
         }
 
-        payment.get().accept(targetUser);
+        payment.get().reject(targetUser);
 
     }
 

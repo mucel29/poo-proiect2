@@ -57,7 +57,9 @@ public class SplitPayCommand extends Command.Base {
                     userAmount.second()
             ));
 
-            involvedAccount.getOwner().getPendingPayments().add(payment);
+            payment.getObservers().add(involvedAccount.getOwner());
+
+            involvedAccount.getOwner().register(payment);
         }
     }
 

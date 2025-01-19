@@ -1,13 +1,16 @@
 package org.poo.system.payments;
 
 import lombok.Getter;
+import org.poo.system.BankingSystem;
 import org.poo.system.Transaction;
 import org.poo.system.exchange.Amount;
 import org.poo.system.user.Account;
 import org.poo.utils.Pair;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Getter
 public class SplitPayment implements PendingPayment {
@@ -16,6 +19,7 @@ public class SplitPayment implements PendingPayment {
     private final Amount totalAmount;
     private final int timestamp;
     private final List<Pair<Account, Amount>> involvedAccounts = new ArrayList<>();
+    private final Set<PaymentObserver> observers = new HashSet<>();
     private final List<PaymentObserver> accepted = new ArrayList<>();
 
     public SplitPayment(
@@ -63,11 +67,11 @@ public class SplitPayment implements PendingPayment {
 
     private void complete() {
         // Maybe check if all observers own at least 1 account
-
         Transaction.SplitPayment splitTransaction = generateTransaction();
 
         for (var involvedEntry : involvedAccounts) {
             if (!involvedEntry.first().canPay(involvedEntry.second(), true)) {
+
                 splitTransaction.setError(
                         "Account "
                                 + involvedEntry.first().getAccountIBAN()
@@ -81,7 +85,7 @@ public class SplitPayment implements PendingPayment {
     }
 
     private void notifyAll(final Transaction.SplitPayment splitTransaction) {
-        for (PaymentObserver observer : accepted) {
+        for (PaymentObserver observer : observers) {
             for (var involvedEntry : involvedAccounts) {
 
                 if (!observer.owns(involvedEntry.first())) {
@@ -105,6 +109,24 @@ public class SplitPayment implements PendingPayment {
         }
     }
 
+    private void printExpected() {
+        StringBuilder expected = new StringBuilder();
+        for (PaymentObserver observer : observers) {
+            expected
+                    .append(observer.toString())
+                    .append(" [")
+                    .append(accepted.contains(observer))
+                    .append("]\n");
+        }
+
+        BankingSystem.log(
+                "====== ["
+                        + timestamp
+                        + "] =====\n"
+                        + expected
+        );
+    }
+
     /**
      * Accepts the payment
      *
@@ -112,11 +134,25 @@ public class SplitPayment implements PendingPayment {
      */
     @Override
     public void accept(final PaymentObserver observer) {
+        BankingSystem.log(
+                observer
+                        + " accepted split from timestamp "
+                        + timestamp
+        );
         // Mark the entry as accepted (maybe check if it owns any account first?)
         accepted.add(observer);
 
-        // If everyone accepted, proceed to do the transaction
-        if (accepted.size() == involvedAccounts.size()) {
+        BankingSystem.log(
+                accepted.size()
+                        + " / "
+                        + observers.size()
+                        +
+                        " for ["
+                        + timestamp
+                        + "]\n"
+        );
+        printExpected();
+        if (observers.size() == accepted.size()) {
             complete();
         }
     }
@@ -128,8 +164,12 @@ public class SplitPayment implements PendingPayment {
      */
     @Override
     public void reject(final PaymentObserver observer) {
+        BankingSystem.log(
+                observer + " rejected split from timestamp " + timestamp
+        );
         Transaction.SplitPayment splitTransaction = generateTransaction()
                 .setError("One user rejected the payment.");
+
         notifyAll(splitTransaction);
     }
 

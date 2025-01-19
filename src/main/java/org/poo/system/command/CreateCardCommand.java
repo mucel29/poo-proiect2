@@ -56,21 +56,19 @@ public class CreateCardCommand extends Command.Base {
     public void execute() throws UserNotFoundException, OwnershipException {
         // Retrieve the user from the storage provider
         User targetUser = BankingSystem.getStorageProvider().getUserByEmail(email);
+        Account targetAccount = BankingSystem.getStorageProvider().getAccountByIban(account);
 
         // Check if the given user matches the account owner
         // NOTE: this could've been checked more easily
         // by retrieving the target account
         // and checking the owner's email with the provided email
         // but the storage provider also check if the user / account is registered
-        if (!BankingSystem.getStorageProvider().getUserByIban(account).equals(targetUser)) {
-            throw new OwnershipException("Account " + account + " does not belong to " + email);
+        if (!targetAccount.isAuthorized(targetUser)) {
+            throw new OwnershipException("User " + email + " is not authorized for " + account);
         }
 
-        // Retrieve the account
-        Account targetAccount = BankingSystem.getStorageProvider().getAccountByIban(account);
-
         // Create a new card
-        Card newCard = new Card(targetAccount, cardType, Utils.generateCardNumber());
+        Card newCard = new Card(targetAccount, targetUser, cardType, Utils.generateCardNumber());
 
         // Generate creation transaction on the target account
         targetAccount.getTransactions().add(

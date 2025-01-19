@@ -104,9 +104,13 @@ public class WithdrawSavingsCommand extends Command.Base {
 
         Amount senderAmount = amount.to(savingsAccount.getCurrency());
 
-        senderAmount = savingsAccount.getOwner().getServicePlan().applyFee(senderAmount);
+//        senderAmount = savingsAccount.getOwner().getServicePlan().applyFee(senderAmount);
 
-        if (savingsAccount.getFunds().total() < senderAmount.total()) {
+        try {
+            savingsAccount.authorizeSpending(savingsAccount.getOwner(), senderAmount);
+            savingsAccount.applyFee(senderAmount);
+        } catch (OperationException e) {
+//        if (savingsAccount.getFunds().total() < senderAmount.total()) {
             throw new OperationException(
                     "Insufficient funds",
                     null,

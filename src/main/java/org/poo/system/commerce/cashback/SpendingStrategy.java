@@ -1,6 +1,7 @@
 package org.poo.system.commerce.cashback;
 
 import lombok.Getter;
+import org.poo.system.BankingSystem;
 import org.poo.system.commerce.Commerciant;
 import org.poo.system.exchange.Amount;
 import org.poo.system.user.Account;
@@ -49,18 +50,35 @@ public final class SpendingStrategy extends CommerciantStrategy.Base {
     @Override
     public Amount apply(final Account account, final Amount amount) {
         CommerciantData data = super.getCommerciantData(account);
+
         data.setSpending(
                 data.getSpending()
                         + amount.to("RON").total()
         );
         data.setTransactionCount(data.getTransactionCount() + 1);
 
-        return account.getOwner()
+
+
+        Amount cashback = account.getOwner()
                 .getServicePlan()
                 .getSpendingCashback(
                         amount,
                         Tier.getTier(data.getSpending())
                 );
 
+        BankingSystem.log(
+                "Total spending: " + data.getSpending() + " RON"
+        );
+
+        BankingSystem.log(
+                "Applying spending cashback of tier "
+                        + Tier.getTier(data.getSpending())
+                        + " to "
+                        + account.getAccountIBAN()
+                        + " [" + data.getType() + "]"
+                        + " [" + cashback + "]"
+        );
+
+        return cashback;
     }
 }

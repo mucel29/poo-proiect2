@@ -51,6 +51,7 @@ public class PayOnlineCommand extends Command.Base {
     @Override
     public void execute() throws UserNotFoundException, OwnershipException, ExchangeException {
         // Retrieve the user from the storage provider
+        BankingSystem.log("payonline");
         User targetUser = BankingSystem.getStorageProvider().getUserByEmail(email);
 
         // Retrieve the card from the storage provider
@@ -92,22 +93,24 @@ public class PayOnlineCommand extends Command.Base {
         // Convert from requested currency to the account's currency
         Amount originalAmount = amount.to(targetAccount.getCurrency());
 
-        // Apply service fee & available cashbacks
-        Amount processedAmount = targetAccount.getOwner().getServicePlan().applyFee(originalAmount)
-                .sub(commerciant.getStrategy().apply(
-                        targetAccount,
-                        originalAmount
-                ));
+        // Apply service fee & available cashbacks;
 
 
-        // Check if the account has enough funds for the payment
-        if (targetAccount.getFunds().total() < processedAmount.total()) {
+//        if (targetAccount.getFunds().total() < processedAmount.total()) {
+        try {
+            BankingSystem.log(
+                    "paid: " + originalAmount.to("RON")
+            );
+            targetAccount.authorizeSpending(targetUser, originalAmount);
+            targetAccount.applyFee(originalAmount);
+            targetAccount.applyCashBack(commerciant, originalAmount);
+        } catch (OperationException e) {
             throw new OperationException(
                     "Insufficient funds",
                     "Not enough balance: "
                             + targetAccount.getFunds()
                             + " (wanted to pay "
-                            + processedAmount
+                            + originalAmount
                             + ") ["
                             + amount
                             + "]",
@@ -116,12 +119,12 @@ public class PayOnlineCommand extends Command.Base {
         }
 
         // Deduct from the account's funds
-        targetAccount.setFunds(targetAccount.getFunds().sub(processedAmount));
+//        targetAccount.setFunds(targetAccount.getFunds().sub(processedAmount));
         BankingSystem.log(
                 "Paid "
                         + amount
                         + " ("
-                        + processedAmount
+                        + originalAmount
                         + ") to "
                         + commerciantName
         );
@@ -139,7 +142,8 @@ public class PayOnlineCommand extends Command.Base {
         if (targetCard.getCardType() == Card.Type.ONE_TIME) {
             new DeleteCardCommand(
                     targetCard.getCardNumber(),
-                    targetUser.getEmail(),
+                    // change to account owner
+                    targetAccount.getOwner().getEmail(),
                     timestamp
             ).execute();
             new CreateCardCommand(

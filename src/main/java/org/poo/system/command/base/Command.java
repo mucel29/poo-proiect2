@@ -9,19 +9,22 @@ import org.poo.io.StateWriter;
 import org.poo.system.BankingSystem;
 import org.poo.system.command.AcceptSplitCommand;
 import org.poo.system.command.AddAccountCommand;
+import org.poo.system.command.AddAssociateCommand;
 import org.poo.system.command.AddFundsCommand;
 import org.poo.system.command.AddInterestCommand;
+import org.poo.system.command.BusinessReportCommand;
 import org.poo.system.command.CashWithdrawCommand;
 import org.poo.system.command.ChangeInterestCommand;
+import org.poo.system.command.ChangeLimitCommand;
 import org.poo.system.command.CheckCardCommand;
 import org.poo.system.command.CreateCardCommand;
 import org.poo.system.command.DeleteAccountCommand;
 import org.poo.system.command.DeleteCardCommand;
-import org.poo.system.command.RejectSplitCommand;
 import org.poo.system.command.MinBalanceCommand;
 import org.poo.system.command.PayOnlineCommand;
 import org.poo.system.command.PrintTransactionsCommand;
 import org.poo.system.command.PrintUsersCommand;
+import org.poo.system.command.RejectSplitCommand;
 import org.poo.system.command.ReportCommand;
 import org.poo.system.command.SendMoneyCommand;
 import org.poo.system.command.SetAliasCommand;
@@ -138,6 +141,28 @@ public interface Command {
         REJECT_SPLIT(
                 "rejectSplitPayment",
                 RejectSplitCommand::fromNode
+        ),
+        ADD_ASSOCIATE(
+                "addNewBusinessAssociate",
+                AddAssociateCommand::fromNode
+        ),
+        CHANGE_SPENDING_LIMIT(
+                "changeSpendingLimit",
+                node -> ChangeLimitCommand.fromNode(
+                        node,
+                        ChangeLimitCommand.Type.SPENDING
+                )
+        ),
+        CHANGE_DEPOSIT_LIMIT(
+                "changeDepositLimit",
+                node -> ChangeLimitCommand.fromNode(
+                        node,
+                        ChangeLimitCommand.Type.DEPOSIT
+                )
+        ),
+        BUSINESS_REPORT(
+                "businessReport",
+                BusinessReportCommand::fromNode
         ),
 
         PRINT_TRANSACTIONS(
@@ -257,7 +282,7 @@ public interface Command {
         /**
          * Produces a {@code JsonNode} with the command name and timestamp
          * and a {@code output} object to be populated by the given consumer
-         * The node is added to the StateWriter's buffer to be printed
+         * The node is deposited to the StateWriter's buffer to be printed
          * @param consumer the functional interface to fill the {@code output} object
          */
         protected void output(final Consumer<ObjectNode> consumer) {
@@ -274,7 +299,7 @@ public interface Command {
         /**
          * Produces a {@code JsonNode} with the command name and timestamp
          * and a {@code output} array to be populated by the given consumer
-         * The node is added to the StateWriter's buffer to be printed
+         * The node is deposited to the StateWriter's buffer to be printed
          * @param consumer the functional interface to fill the {@code output} array
          */
         protected void outputArray(final Consumer<ArrayNode> consumer) {

@@ -8,7 +8,7 @@ import org.poo.io.StateWriter;
 import org.poo.system.command.base.Command;
 import org.poo.utils.NodeConvertable;
 
-@Getter @Setter
+@Getter
 public class Card implements NodeConvertable {
 
     public enum Type {
@@ -28,17 +28,22 @@ public class Card implements NodeConvertable {
     }
 
 
-    private Account account;
-    private Type cardType;
-    private String cardNumber;
+    private final Account account;
+    private final User creator;
+    private final Type cardType;
+    private final String cardNumber;
+
+    @Setter
     private boolean active = true;
 
     public Card(
             final Account account,
+            final User creator,
             final Type cardType,
             final String cardNumber
     ) {
         this.account = account;
+        this.creator = creator;
         this.cardType = cardType;
         this.cardNumber = cardNumber;
     }

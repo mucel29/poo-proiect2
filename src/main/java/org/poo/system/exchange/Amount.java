@@ -43,7 +43,7 @@ public record Amount(double total, String currency) {
      */
     public Amount sub(final Amount other) {
         if (currency.equals(other.currency)) {
-            return new Amount(total - other.total, currency);
+            return this.sub(other.total);
         }
 
         return new Amount(total - other.to(currency).total, currency);
@@ -56,10 +56,19 @@ public record Amount(double total, String currency) {
      */
     public Amount add(final Amount other) {
         if (currency.equals(other.currency)) {
-            return new Amount(total + other.total, currency);
+            return this.add(other.total);
         }
 
         return new Amount(total + other.to(currency).total, currency);
+    }
+
+    /**
+     * Creates a new amount from the existing one with the new total
+     * @param newTotal
+     * @return
+     */
+    public Amount set(final double newTotal) {
+        return new Amount(newTotal, currency);
     }
 
     @Override

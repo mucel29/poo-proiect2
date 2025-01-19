@@ -53,6 +53,7 @@ public final class BankingSystem {
     }
 
     private static int testNumber = 0;
+    private static int timestamp = 0;
 
     /**
      * Resets the system's state
@@ -99,7 +100,7 @@ public final class BankingSystem {
         getExchangeProvider().registerExchanges(
                 Exchange.readArray(exchangeNode)
         );
-        getExchangeProvider().printRates();
+//        getExchangeProvider().printRates();
 
 
 
@@ -118,6 +119,7 @@ public final class BankingSystem {
     public static void run() {
         for (Command command : instance.getCommands()) {
             try {
+                timestamp = ((Command.Base) command).getTimestamp();
                 command.execute();
             } catch (BankingException e) {
                 if (!e.handle()) {
@@ -142,7 +144,7 @@ public final class BankingSystem {
             return;
         }
 
-        System.out.println(message);
+        System.out.println("[" + timestamp + "] " + message);
     }
 
     public static ExchangeProvider getExchangeProvider() {

@@ -41,7 +41,7 @@ public class MinBalanceCommand extends Command.Base {
      * @throws InputException if the node is not a valid command
      */
     public static Command.Base fromNode(final JsonNode node) throws InputException {
-        double amount = IOUtils.readDoubleChecked(node, "total");
+        double amount = IOUtils.readDoubleChecked(node, "amount");
         String account = IOUtils.readStringChecked(node, "account");
 
         return new MinBalanceCommand(account, amount);

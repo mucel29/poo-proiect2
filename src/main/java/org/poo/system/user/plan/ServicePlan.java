@@ -73,22 +73,21 @@ public final class ServicePlan {
     /**
      * Applies a fee on the given amount depending on the active plan
      * @param amount
-     * @return a new amount with the added fee
+     * @return the service fee
      */
-   public Amount applyFee(final Amount amount) {
+   public Amount getFee(final Amount amount) {
         Amount ronAmount = amount.to("RON");
 
         if (ronAmount.total() < transactionThreshold) {
-            return amount.clone();
+            return new Amount(0.0, amount.currency());
         }
 
-       Amount ronFee = new Amount(
+        Amount ronFee = new Amount(
                ronAmount.total()
                        * this.transactionFee,
                "RON"
-       );
+        );
 
-        Amount total = ronAmount.add(ronFee).to(amount.currency());
 
         // Update plan progress
        if (this.upgradeThreshold > 0) {
@@ -109,7 +108,7 @@ public final class ServicePlan {
            }
        }
 
-        return total;
+        return ronFee.to(amount.currency());
    }
 
     /**
@@ -123,6 +122,7 @@ public final class ServicePlan {
         if (this.spendingCashbacks.size() <= spendingTier) {
             throw new OperationException("Unknown tier: " + spendingTier);
         }
+
 
         return new Amount(
                 amount.total()

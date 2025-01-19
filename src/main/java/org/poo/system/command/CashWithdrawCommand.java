@@ -78,10 +78,14 @@ public class CashWithdrawCommand extends Command.Base {
 
         Amount targetAmount = requestedAmount.to(targetAccount.getCurrency());
 
-        targetAmount = targetUser.getServicePlan().applyFee(targetAmount);
+//        targetAmount = targetUser.getServicePlan().applyFee(targetAmount);
 
 
-        if (targetAccount.getFunds().total() < targetAmount.total()) {
+//        if (targetAccount.getFunds().total() < targetAmount.total()) {
+        try {
+            targetAccount.authorizeSpending(targetUser, targetAmount);
+            targetAccount.applyFee(targetAmount);
+        } catch (OperationException e) {
             throw new OperationException(
                     "Insufficient funds",
                     "Account "
@@ -91,17 +95,17 @@ public class CashWithdrawCommand extends Command.Base {
             );
         }
 
-        if (targetAccount.getFunds().sub(targetAmount).total() < targetAccount.getMinBalance()) {
-            throw new OperationException(
-                    "Cannot perform payment due to a minimum balance being set",
-                    "Account "
-                            + targetAccount.getAccountIBAN()
-                            + " will go under the minimum balance",
-                    new TransactionHandler(targetAccount, timestamp)
-            );
-        }
+//        if (targetAccount.getFunds().sub(targetAmount).total() < targetAccount.getMinBalance()) {
+//            throw new OperationException(
+//                    "Cannot perform payment due to a minimum balance being set",
+//                    "Account "
+//                            + targetAccount.getAccountIBAN()
+//                            + " will go under the minimum balance",
+//                    new TransactionHandler(targetAccount, timestamp)
+//            );
+//        }
 
-        targetAccount.setFunds(targetAccount.getFunds().sub(targetAmount));
+//        targetAccount.setFunds(targetAccount.getFunds().sub(targetAmount));
 
         targetAccount.getTransactions().add(
                 new Transaction.CashWithdrawal("Cash withdrawal of " + amount, timestamp)

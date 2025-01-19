@@ -15,24 +15,28 @@ import org.poo.system.exceptions.handlers.CommandDescriptionHandler;
 import org.poo.system.exceptions.handlers.TransactionHandler;
 import org.poo.system.exchange.Amount;
 import org.poo.system.user.Account;
+import org.poo.system.user.User;
 import org.poo.utils.Utils;
 
 public class SendMoneyCommand extends Command.Base {
 
     private final String sender;
     private final String receiver;
+    private final String email;
     private final double amount;
     private final String description;
 
     public SendMoneyCommand(
             final String sender,
             final String receiver,
+            final String email,
             final double amount,
             final String description
     ) {
         super(Type.SEND_MONEY);
         this.sender = sender;
         this.receiver = receiver;
+        this.email = email;
         this.amount = amount;
         this.description = description;
     }
@@ -66,6 +70,7 @@ public class SendMoneyCommand extends Command.Base {
 
         // Retrieve the sender account from the storage provider
         Account senderAccount = BankingSystem.getStorageProvider().getAccountByIban(sender);
+        User senderUser = BankingSystem.getStorageProvider().getUserByEmail(email);
 
         // Retrieve the receiver account from the storage provider
         Account receiverAccount;
@@ -92,11 +97,22 @@ public class SendMoneyCommand extends Command.Base {
         // Convert the total to be transferred to the receiver
         Amount receiverAmount = senderAmount.to(receiverAccount.getCurrency());
 
-        senderAmount =  senderAccount.getOwner().getServicePlan().applyFee(senderAmount);
+        // might change to senderUser
+//        senderAmount =  senderAccount.getOwner().getServicePlan().applyFee(senderAmount);
 
 
         // Check if the sender has enough funds
-        if (!senderAccount.canPay(senderAmount, true)) {
+//        if (!senderAccount.canPay(senderAmount, true)) {
+        try {
+            BankingSystem.log(
+                    "Authorizing sending: " + senderAmount.add(
+                            senderAccount.getOwner().getServicePlan().getFee(senderAmount))
+
+                    );
+            senderAccount.authorizeSpending(senderUser, senderAmount.add(
+                    senderAccount.getOwner().getServicePlan().getFee(senderAmount)
+            ));
+        } catch (OperationException e) {
             throw new OperationException(
                     "Insufficient funds",
                     "Not enough balance: "
@@ -118,14 +134,12 @@ public class SendMoneyCommand extends Command.Base {
                 .setCurrency(senderAccount.getCurrency())
                 .setTransferType(Transaction.TransferType.SENT);
 
-        // Deduct the total from the sender's account and emmit a copy of the transaction
-        senderAccount.setFunds(senderAccount.getFunds().sub(senderAmount));
+        // Emmit a copy of the transaction
         senderAccount.getTransactions().add(transaction.clone());
 
-
-
         // Add the total to the receiver's account and emmit a `received` transaction
-        receiverAccount.setFunds(receiverAccount.getFunds().add(receiverAmount));
+//        receiverAccount.setFunds(receiverAccount.getFunds().add(receiverAmount));
+        receiverAccount.authorizeDeposit(receiverAccount.getOwner(), receiverAmount);
         receiverAccount.getTransactions().add(
                 transaction
                         .setCurrency(receiverAccount.getCurrency())
@@ -164,8 +178,9 @@ public class SendMoneyCommand extends Command.Base {
         String receiver = IOUtils.readStringChecked(node, "receiver");
         double amount = IOUtils.readDoubleChecked(node, "amount");
         String description = IOUtils.readStringChecked(node, "description");
+        String email = IOUtils.readStringChecked(node, "email");
 
-        return new SendMoneyCommand(account, receiver, amount, description);
+        return new SendMoneyCommand(account, receiver, email, amount, description);
     }
 
 }

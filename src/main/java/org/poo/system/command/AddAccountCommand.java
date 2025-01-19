@@ -8,6 +8,7 @@ import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.InputException;
 import org.poo.system.exceptions.UserNotFoundException;
 import org.poo.system.user.Account;
+import org.poo.system.user.BusinessAccount;
 import org.poo.system.user.User;
 import org.poo.utils.Utils;
 
@@ -42,12 +43,21 @@ public class AddAccountCommand extends Command.Base {
         User targetUser = BankingSystem.getStorageProvider().getUserByEmail(this.email);
 
         // Create the account
-        Account newAccount = new Account(
-                targetUser,
-                Utils.generateIBAN(),
-                this.currency,
-                this.accountType
-        );
+        Account newAccount;
+        if (accountType == Account.Type.BUSINESS) {
+            newAccount = new BusinessAccount(
+                    targetUser,
+                    Utils.generateIBAN(),
+                    this.currency
+            );
+        } else {
+            newAccount = new Account(
+                    targetUser,
+                    Utils.generateIBAN(),
+                    this.currency,
+                    this.accountType
+            );
+        }
 
         // If the requested account is a savings one, add the interest
         if (this.accountType == Account.Type.SAVINGS) {
