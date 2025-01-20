@@ -101,7 +101,6 @@ public final class BankingSystem {
         getExchangeProvider().registerExchanges(
                 Exchange.readArray(exchangeNode)
         );
-//        getExchangeProvider().printRates();
 
 
 
@@ -138,6 +137,7 @@ public final class BankingSystem {
 
     /**
      * Prints a message if verbose logging is enabled
+     *
      * @param message the message to print
      */
     public static void log(final String message) {

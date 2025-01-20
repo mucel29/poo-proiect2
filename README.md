@@ -1,6 +1,6 @@
-# Project Assignment POO - J. POO Morgan - Phase One
+# Project Assignment POO - J. POO Morgan - Phase Two
 
-#### [Assignment Link](https://ocw.cs.pub.ro/courses/poo-ca-cd/teme/2024/proiect-e1)
+#### [Assignment Link](https://ocw.cs.pub.ro/courses/poo-ca-cd/teme/2024/proiect-etapa2)
 <br>
 
 #### Table of contents
@@ -11,7 +11,7 @@
   * [`Transaction`](#transaction)
   * [`Command`](#command)
 * [Design](#design)
-  * [Improvements from `Tema-0`](#improvements-from-tema-0)
+  * [Improvements from `Phase One`](#improvements-from-phase-one)
   * [Patterns](#patterns)
 * [Advanced concepts](#advanced-concepts)
   * [Nested classes](#nested-classes)
@@ -21,6 +21,7 @@
   * [Reflection](#reflection)
     * [Why use reflection](#why-use-reflection)
     * [Reflection flow](#reflection-flow)
+    * [The `getType` problem](#the-gettype-problem)
 * [Program flow](#program-flow)
 * [Feedback](#feedback)
 <!-- TOC -->
@@ -34,11 +35,14 @@
   
    * `system` - banking system package
      * `command` - system commands package
+     * `commerce` - commerciants package
      * `exceptions` - custom exceptions used in this project
        * `handlers` - custom exception handlers
      * `exchange` - currency conversion package
+     * `payments` - pending payments package
      * `storage` - data storage package
      * `user` - user data structures package
+       * `plan` - service plans package
      * `BankingSystem` - system manager singleton
      * `Transaction` - interface representing transactions
 
@@ -59,6 +63,10 @@ Defines the transaction interface, along with various nested class implementatio
 * `Transaction.Payment` - implementation representing a card payment
 * `Transaction.CardOperation` - implementation representing a card operation _(Creation / Destruction)_
 * `Transaction.SplitPayment` - implementation representing a payment from multiple accounts
+* `Transaction.PlanUpgrade`
+* `Transaction.CashWithdrawal`
+* `Transaction.InterestPayout`
+* `Transaction.SavingsWithdrawal`
 
 > * All transaction implementations are derived from `Transaction.Base` and only contain their specific fields.
 > * All functionality is implemented by `Transaction.Base` and uses reflection to access the subclasses when exporting to `ObjectNode`
@@ -75,12 +83,10 @@ All system commands define a static method `fromNode` for parsing the command de
 
 ## Design
 
-### Improvements from `Tema-0`
+### Improvements from `Phase One`
 
-* Removal of the `Constants` class by utilising enums for constant values
-* `*Type` enums are now nested inside their corresponding classes instead of a separate file and are accessed through `*.Type` _(e.g. `Account.Type`)_
-* Removal of `switch` statements in favor of `ENUM::fromString` for parsing and validation _(e.g. `Command.Type::parse` returns the `Command.Base` instance to be used)_
-* Usage of exceptions for detecting erroneous requests in the system and handling them
+* Usage of the `Amount` record for handling all money related actions
+* Moving various checks and actions for `Account` into `Account::authorize*` methods
 
 ### Patterns
 
@@ -98,10 +104,19 @@ All system commands define a static method `fromNode` for parsing the command de
 
 <br>
 
-* The described providers also act as **DAO**s _(Data Access Object)_
-> In software, a data access object (DAO) is a pattern that provides an abstract interface to some type of database or other persistence mechanism.
-> <br>
-> [Wikipedia page](https://en.wikipedia.org/wiki/Data_access_object)
+* Strategy - `CommerciantStrategy` uses this pattern to determine which cashback strategy to apply at runtime
+> NOTE <br><br>
+> The difference between `provider` and `strategy` is only conceptual, one using abstract classes and the other interfaces. This was discussed with Mr. Olteanu, and he advised me to mention the usage of these patterns.
+
+<br>
+
+* Factory - `StrategyFactory` & `ServicePlanFactory`
+* Builder - `ServicePlan` through the `@Builder` annotation from lombok
+
+
+* Observer - `PendingPayment` & `PaymentObserver`
+
+> These interfaces are used to manage the new `SplitPayment` which waits for all observers (`User`) to accept the payment before notifying all of them to proceed with the payment, or to remove it in case of an error or rejection.
 
 ## Advanced concepts
 
@@ -112,11 +127,16 @@ This project makes use of nested classes to provide a cleaner file structure and
 ### Lambdas / Functional Interfaces
 
 This project makes use of the `PathComposer` interface inside `Graph` to specify how a new node affects an existing path weight
-<br>
+
 Lambdas are used for simplifying the filtering / iterating code when working with [streams](#streams)
 
 ### Records
-This project makes use of `record`s for simplifying `Pair<T>` and `Exchange`
+This project makes use of `record`:
+* `Pair<T>` - for grouping two unrelated objects
+* `Exchange` - for grouping two currencies and their exchange rate
+* `Amount` - for keeping track of funds & cleaner conversions between currencies
+* `PaymentOrder` - for grouping all the details to be sent to an observer regarding a pending payment
+* `BusinessAccount.AssociateData` - for keeping track of associates
 
 ### Streams
 
@@ -128,7 +148,7 @@ This project makes use of streams for:
 ### Reflection
 
 This project makes use of reflection for exporting `Transaction` instances.
-<br>
+
 <br>
 
 #### Why use reflection
@@ -150,7 +170,22 @@ There are 3 reasons for using this approach in implementing transactions:
 * `ReflectionUtils::addField` determines the runtime type of the field and casts it's value accordingly 
 * `root.put(field.getName(), (FIELD_TYPE) field.get(caller))`
 
+<br>
 
+#### The `getType` problem
+
+After a quick read into the grading guidelines available on the OCW page, in the section about `OOP penalties` there was a penalty of `1/10` for using `instanceof` or `getClass`.
+
+After asking Cleopatra if this also applies to `getType`, which is heavily used inside `ReflectionUtils`, she confirmed that it also leads to a penalty.
+
+Now I'm not arguing that `getType`, even reflection in general, breaks OOP principles. I totally agree there, I would try to avoid reflection at all costs in a real project.
+
+What I'm trying to show is an advanced understanding of Java features and concepts, including reflection.
+
+While supporting the above statement about OOP principles, it needs to be noted that `Jackson` also makes use of reflection for its serialization and deserialization processes _(unless the fields are annotated)_.
+
+Considering the above statement, I think my usage of `getType` should not warrant a penalty as it's being used only during the writes to the `StateMapper` and not throughout the whole project.
+> _I think this usage compensates for the manual parsing done by `IOUtils` instead of using the `fileio` package_
 
 ## Program flow
 
@@ -171,11 +206,20 @@ There are 3 reasons for using this approach in implementing transactions:
 
 ## Feedback
 
-* A better organization would be preferred
-* The OCW page should be in sync with the test files
-* More examples should be provided on the OCW page
-* More details should be provided about certain commands:
-  * `splitPayment` should stop on the first account with insufficient balance or at least output all the accounts that fit this criteria
-  * `printUsers` should treat both types of accounts
-  * Erroneous queries should provide examples of transaction / command messages
+> Please keep in mind that this is not an attack to any particular person. These are just my thoughts about the project.
 
+<br>
+
+* A better organization would be preferred
+* The OCW page should be in sync with the test files _(at least it's better than phase one)_
+* The more advanced features should be explained plainly, without a wall of text on the forum serving as an example.
+_(If it takes that much effort to explain a feature correctly, then it might be better to rethink it)_
+* The countless revisions of the test files should be noted here.
+
+<br>
+
+> This whole project phase felt like a big process of trial and error. I spent countless hours debugging features that at a first glance should be logical, but implemented poorly.
+> 
+> A good example would be the deposit and spending limits on the `BusinessAccount`.
+> 
+>While a normal person might think that a spending limit is applied for the cumulated transactions made by an associate, the reference implementation uses the current transaction amount for checking whether the limit was reached or not.

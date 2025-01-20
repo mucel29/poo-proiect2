@@ -12,7 +12,6 @@ import org.poo.system.exceptions.OwnershipException;
 import org.poo.system.exceptions.handlers.CommandDescriptionHandler;
 import org.poo.system.exceptions.handlers.CommandErrorHandler;
 import org.poo.system.user.Account;
-import org.poo.system.user.AssociateData;
 import org.poo.system.user.BusinessAccount;
 
 import java.util.Arrays;
@@ -120,7 +119,7 @@ public final class BusinessReportCommand extends Command.Base {
                 double totalSpent = 0.0;
                 double totalDeposited = 0.0;
 
-                for (AssociateData aData : bAccount.getAssociateDataList()) {
+                for (BusinessAccount.AssociateData aData : bAccount.getAssociateDataList()) {
                     // Add the associate to it's corresponding array node
                     switch (aData.role()) {
                         case MANAGER -> managerArray.add(aData.toNode());

@@ -1,7 +1,9 @@
 package org.poo.system.user;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Getter;
 import lombok.Setter;
+import org.poo.io.StateWriter;
 import org.poo.system.BankingSystem;
 import org.poo.system.commerce.Commerciant;
 import org.poo.system.commerce.CommerciantSpending;
@@ -9,6 +11,7 @@ import org.poo.system.exceptions.InputException;
 import org.poo.system.exceptions.OperationException;
 import org.poo.system.exceptions.OwnershipException;
 import org.poo.system.exchange.Amount;
+import org.poo.utils.NodeConvertable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,6 +49,30 @@ public class BusinessAccount extends Account {
             }
         }
     }
+
+    public record AssociateData(
+            User associate,
+            BusinessAccount.Role role,
+            Amount spent,
+            Amount deposited
+    ) implements NodeConvertable {
+
+        /**
+         * Converts the implementing instance to an {@code ObjectNode}
+         *
+         * @return the instance's JSON representation
+         */
+        @Override
+        public ObjectNode toNode() {
+            ObjectNode output = StateWriter.getMapper().createObjectNode();
+            output.put("username", associate.getLastName() + " " + associate.getFirstName());
+            output.put("spent", spent.total());
+            output.put("deposited", deposited.total());
+
+            return output;
+        }
+    }
+
 
     private static final Amount INITIAL_LIMIT = new Amount(500, "RON");
 

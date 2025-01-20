@@ -113,16 +113,16 @@ public final class ReflectionUtils {
 
     /**
      * Find an object's field
+     *
      * @param fieldName the name of the field
      * @param caller the owner of the field
      * @return the {@code Field} if it can be accessed or {@code null}
      */
     public static Field findField(final String fieldName, final Object caller) {
-         Optional<Field> targetField = Arrays.stream(
-                 caller.getClass().getDeclaredFields()
-                 )
-                 .filter((field) -> field.getName().equals(fieldName))
-                 .findFirst();
+         Optional<Field> targetField =
+                 Arrays.stream(caller.getClass().getDeclaredFields())
+                         .filter((field) -> field.getName().equals(fieldName))
+                         .findFirst();
 
         return targetField.orElse(null);
     }

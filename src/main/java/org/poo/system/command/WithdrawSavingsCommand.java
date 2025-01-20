@@ -112,7 +112,7 @@ public class WithdrawSavingsCommand extends Command.Base {
         }
 
         // Emmit withdrawal transaction
-        Transaction savingsTransaction = new Transaction.SvaingsWithdraw(
+        Transaction savingsTransaction = new Transaction.SavingsWithdrawal(
                 "Savings withdrawal",
                 timestamp
         )
