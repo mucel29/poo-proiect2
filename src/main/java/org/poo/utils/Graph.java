@@ -16,6 +16,7 @@ public class Graph<T> {
     public interface PathComposer {
         /**
          * Calculates the contribution of the second node weight to te current path
+         *
          * @param firstWeight the current path weight
          * @param secondWeight the next node's weight
          * @return the new weight from the start node to the next node
@@ -30,6 +31,7 @@ public class Graph<T> {
 
     /**
      * Adds a weighted edge to the graph
+     *
      * @param src the source node
      * @param dest the destination node
      * @param weight the edge's weight
@@ -53,6 +55,7 @@ public class Graph<T> {
 
     /**
      * Removes a node from the graph and all its associated edges
+     *
      * @param node the node to remove
      */
     public void removeNode(final T node) {
@@ -67,6 +70,7 @@ public class Graph<T> {
 
     /**
      * Computes all best paths from the given node to the rest of the nodes of the graph
+     *
      * @param node the start node
      * @param composer the rule to calculate the contribution of a node to the current path
      * @return a map of target nodes and their weights
@@ -122,6 +126,7 @@ public class Graph<T> {
 
     /**
      * Computes all best paths from every node to every other node in the graph
+     *
      * @param composer the rule to calculate the contribution of a node to the current path
      * @return a map of every node pair and their weights
      */

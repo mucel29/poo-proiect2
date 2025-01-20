@@ -43,6 +43,7 @@ public class PayOnlineCommand extends Command.Base {
 
     /**
      * {@inheritDoc}
+     *
      * @throws UserNotFoundException if the given user does not exist
      * @throws OwnershipException if the given account is not owned by the given user
      * @throws ExchangeException if no exchange from the account's currency
@@ -50,8 +51,8 @@ public class PayOnlineCommand extends Command.Base {
      */
     @Override
     public void execute() throws UserNotFoundException, OwnershipException, ExchangeException {
+
         // Retrieve the user from the storage provider
-        BankingSystem.log("payonline");
         User targetUser = BankingSystem.getStorageProvider().getUserByEmail(email);
 
         // Retrieve the card from the storage provider
@@ -67,8 +68,8 @@ public class PayOnlineCommand extends Command.Base {
         }
         Account targetAccount = targetCard.getAccount();
 
-        // Check the ownership
-        if (!targetUser.getAccounts().contains(targetAccount)) {
+        // Check authorization (error message should be something else tho)
+        if (targetAccount.isUnauthorized(targetUser)) {
             throw new OwnershipException(
                     "Card not found",
                     "Card " + cardNumber + " is not owned by " + email,
@@ -85,6 +86,7 @@ public class PayOnlineCommand extends Command.Base {
             );
         }
 
+        // Ignore freaky ahh payment from the 4th test
         if (amount.total() <= 0.0) {
             BankingSystem.log("Tried to pay 0.0 to " + commerciantName);
             return;
@@ -95,26 +97,22 @@ public class PayOnlineCommand extends Command.Base {
                 .getCommerciantByName(commerciantName);
 
         // Convert from requested currency to the account's currency
-        Amount originalAmount = amount.to(targetAccount.getCurrency());
+        Amount targetAmount = amount.to(targetAccount.getCurrency());
 
-        // Apply service fee & available cashbacks;
-
-
-//        if (targetAccount.getFunds().total() < processedAmount.total()) {
         try {
-            targetAccount.authorizeSpending(targetUser, originalAmount);
+            targetAccount.authorizeSpending(targetUser, targetAmount);
 
             // Emmit payment transaction
             targetAccount.getTransactions().add(
                     new Transaction.Payment("Card payment", timestamp)
                             .setCommerciant(commerciantName)
-                            .setAmount(originalAmount.total())
+                            .setAmount(targetAmount.total())
             );
 
-            targetAccount.applyFee(originalAmount);
-            targetAccount.applyCashBack(targetUser, commerciant, originalAmount);
+            targetAccount.applyFee(targetAmount);
+            targetAccount.applyCashBack(targetUser, commerciant, targetAmount);
             BankingSystem.log(
-                    "paid: " + originalAmount.to("RON")
+                    "paid: " + targetAmount.to("RON")
             );
         } catch (OperationException e) {
             BankingSystem.log(
@@ -125,7 +123,7 @@ public class PayOnlineCommand extends Command.Base {
                     "Not enough balance: "
                             + targetAccount.getFunds()
                             + " (wanted to pay "
-                            + originalAmount
+                            + targetAmount
                             + ") ["
                             + amount
                             + "]",
@@ -133,13 +131,11 @@ public class PayOnlineCommand extends Command.Base {
             );
         }
 
-        // Deduct from the account's funds
-//        targetAccount.setFunds(targetAccount.getFunds().sub(processedAmount));
         BankingSystem.log(
                 "Paid "
                         + amount
                         + " ("
-                        + originalAmount
+                        + targetAmount
                         + ") to "
                         + commerciantName
                         + " [online]"

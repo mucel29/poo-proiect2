@@ -27,6 +27,7 @@ public class ChangeInterestCommand extends Command.Base {
 
     /**
      * {@inheritDoc}
+     *
      * @throws OwnershipException if no user owns the given account
      * @throws OperationException if the account is not a savings one
      */

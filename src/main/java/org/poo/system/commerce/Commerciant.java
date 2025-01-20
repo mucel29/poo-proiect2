@@ -8,6 +8,7 @@ import org.poo.system.BankingSystem;
 import org.poo.system.commerce.cashback.CommerciantStrategy;
 import org.poo.system.commerce.cashback.StrategyFactory;
 import org.poo.system.exceptions.InputException;
+import org.poo.system.exchange.Amount;
 import org.poo.system.user.Account;
 
 import java.util.ArrayList;
@@ -69,6 +70,7 @@ public final class Commerciant {
     private final CommerciantStrategy strategy;
 
     private final Map<Account, Integer> transactions = new HashMap<>();
+    private final Map<Account, Double> spendings = new HashMap<>();
 
     public Commerciant(
             final String name,
@@ -86,6 +88,7 @@ public final class Commerciant {
 
     /**
      * Retrieves the number of transactions made to this commerciant
+     *
      * @param account the account
      * @return the number of transaction the given account has made to this commerciant
      */
@@ -95,10 +98,33 @@ public final class Commerciant {
 
     /**
      * Adds a transaction made by the given account to this commerciant
-     * @param account
+     *
+     * @param account the account
      */
     public void addTransaction(final Account account) {
         transactions.put(account, getTransactionCount(account) + 1);
+    }
+
+    /**
+     * Returns the amount spent by the given account
+     * The amount is in RON
+     *
+     * @param account the account
+     * @return the spent amount
+     */
+    public double getSpendings(final Account account) {
+        return spendings.computeIfAbsent(account, k -> 0.0);
+    }
+
+    /**
+     * Updates the spending for the given account
+     *
+     * @param account the account
+     * @param amount how much was spent
+     */
+    public void addSpending(final Account account, final Amount amount) {
+        double ronSpending = amount.to("RON").total();
+        spendings.put(account, getSpendings(account) + ronSpending);
     }
 
     /**

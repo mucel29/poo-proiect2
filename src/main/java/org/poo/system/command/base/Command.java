@@ -241,6 +241,7 @@ public interface Command {
 
     /**
      * Reads an array of commands
+     *
      * @param node the node containing the commands
      * @return a List of deserialized {@code Command} instances
      * @throws InputException if the given node is not an array

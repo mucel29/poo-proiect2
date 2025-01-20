@@ -23,6 +23,7 @@ public class CheckCardCommand extends Command.Base {
 
     /**
      * {@inheritDoc}
+     *
      * @throws OwnershipException if the card does not belong to anyone
      */
     @Override
@@ -41,20 +42,22 @@ public class CheckCardCommand extends Command.Base {
         }
 
         // Retrieve the associated account
-        Account link = targetCard.getAccount();
+        Account targetAccount = targetCard.getAccount();
 
         // Verify the account's balance
-        if (link.getFunds().total() <= link.getMinBalance()) {
+        if (targetAccount.getFunds().total() <= targetAccount.getMinBalance()) {
             // Freeze card
             targetCard.setActive(false);
-            link.getTransactions().add(new Transaction.Base(
+            targetAccount.getTransactions().add(new Transaction.Base(
                     "You have reached the minimum total of funds, the card will be frozen",
                     timestamp
             ));
-        } else if (link.getFunds().total() - link.getMinBalance() <= WARNING_THRESHOLD) {
+        } else if (targetAccount.getFunds().sub(targetAccount.getMinBalance()).total()
+                <= WARNING_THRESHOLD) {
             // The account is nearing the minimum balance threshold
             // Issue a warning
-            link.getTransactions().add(new Transaction.Base(
+            // Phase One ocw wasn't too specific about this
+            targetAccount.getTransactions().add(new Transaction.Base(
                     "Warning??????",
                     timestamp
             ));

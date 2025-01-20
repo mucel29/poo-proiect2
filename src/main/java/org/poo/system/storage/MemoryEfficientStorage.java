@@ -38,7 +38,7 @@ public final class MemoryEfficientStorage implements StorageProvider {
                 user -> user.getAccounts().contains(account)
         ).findFirst();
 
-        return registered.isPresent() && registered.get().equals(account.getOwner());
+        return registered.isPresent() && !account.isUnauthorized(registered.get());
     }
 
     private boolean isRegistered(final Card card) {
@@ -359,6 +359,16 @@ public final class MemoryEfficientStorage implements StorageProvider {
     }
 
     /**
+     * Retrieves all registered commerciants
+     *
+     * @return an immutable list of commerciants
+     */
+    @Override
+    public List<Commerciant> getCommerciants() {
+        return List.of(commerciants.toArray(new Commerciant[0]));
+    }
+
+    /**
      * Finds an account
      *
      * @param iban the account's IBAN to search for
@@ -394,7 +404,7 @@ public final class MemoryEfficientStorage implements StorageProvider {
         }
 
         Optional<Account> account = getAccounts().stream().filter(
-                a -> a.getAlias().equals(alias)
+                a -> !a.getAlias().isEmpty() && a.getAlias().equals(alias)
         ).findFirst();
 
         if (account.isEmpty()) {

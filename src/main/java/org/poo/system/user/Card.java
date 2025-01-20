@@ -17,6 +17,7 @@ public class Card implements NodeConvertable {
 
         /**
          * Retrieves the command type corresponding to the card's type
+         *
          * @return {@code Command.Type} corresponding to the card type
          */
         public Command.Type command() {

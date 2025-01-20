@@ -37,38 +37,44 @@ public class CashWithdrawCommand extends Command.Base {
     }
 
     /**
-     * Executes the command instance. May produce transactions or errors.
+     * {@inheritDoc}
+     *
+     * @throws UserNotFoundException if no user exists with the given email
+     * @throws OwnershipException if no user owns the given card,
+     * or the user is unauthorized to perform the withdrawal
+     * @throws OperationException if the card is frozen
+     * or the connected account doesn't have enough funds
      */
     @Override
-    public void execute() {
+    public void execute()
+            throws UserNotFoundException, OwnershipException, OperationException {
 
+        // Retrieve user and card
         Card targetCard;
         User targetUser;
 
         try {
-            targetCard = BankingSystem.getStorageProvider().getCard(cardNumber);
             targetUser = BankingSystem.getStorageProvider().getUserByEmail(email);
-        } catch (OwnershipException e) {
-            throw new OwnershipException(
-                    "Card not found",
-                    e.getMessage(),
-                    new CommandDescriptionHandler(this)
-            );
+            targetCard = BankingSystem.getStorageProvider().getCard(cardNumber);
         } catch (UserNotFoundException e) {
             throw new UserNotFoundException(
                     "User not found",
                     e.getMessage(),
                     new CommandDescriptionHandler(this)
             );
+        } catch (OwnershipException e) {
+            throw new OwnershipException(
+                    "Card not found",
+                    e.getMessage(),
+                    new CommandDescriptionHandler(this)
+            );
         }
-
-        // Check if the user and owner are the same???
 
 
         Account targetAccount = targetCard.getAccount();
 
-
-        if (!targetAccount.isAuthorized(targetUser)) {
+        // Check if the user is authorized to perform the withdrawal
+        if (targetAccount.isUnauthorized(targetUser)) {
             throw new OwnershipException(
                     "Card not found",
                     targetUser
@@ -78,7 +84,7 @@ public class CashWithdrawCommand extends Command.Base {
             );
         }
 
-
+        // Check if the card is frozen
         if (!targetCard.isActive()) {
             throw new OperationException(
                     "Card is frozen",
@@ -89,12 +95,10 @@ public class CashWithdrawCommand extends Command.Base {
 
         Amount requestedAmount = new Amount(amount, "RON");
 
+        // Convert the requested amount into the account's currency
         Amount targetAmount = requestedAmount.to(targetAccount.getCurrency());
 
-//        targetAmount = targetUser.getServicePlan().applyFee(targetAmount);
-
-
-//        if (targetAccount.getFunds().total() < targetAmount.total()) {
+        // Perform withdrawal
         try {
             targetAccount.authorizeSpending(targetUser, targetAmount);
             targetAccount.applyFee(targetAmount);
@@ -108,43 +112,11 @@ public class CashWithdrawCommand extends Command.Base {
             );
         }
 
-//        if (targetAccount.getFunds().sub(targetAmount).total() < targetAccount.getMinBalance()) {
-//            throw new OperationException(
-//                    "Cannot perform payment due to a minimum balance being set",
-//                    "Account "
-//                            + targetAccount.getAccountIBAN()
-//                            + " will go under the minimum balance",
-//                    new TransactionHandler(targetAccount, timestamp)
-//            );
-//        }
-
-//        targetAccount.setFunds(targetAccount.getFunds().sub(targetAmount));
-
+        // Emmit withdrawal transaction to the connected account
         targetAccount.getTransactions().add(
                 new Transaction.CashWithdrawal("Cash withdrawal of " + amount, timestamp)
                         .setAmount(amount)
         );
-
-        // Generate a new one time card
-//        if (targetCard.getCardType() == Card.Type.ONE_TIME) {
-//            try {
-//                new DeleteCardCommand(
-//                        targetCard.getCardNumber(),
-//                        // change to account owner
-//                        targetUser.getEmail(),
-//                        timestamp,
-//                        false
-//                ).execute();
-//            } catch (OwnershipException e) {
-//                return;
-//            }
-//            new CreateCardCommand(
-//                    Card.Type.ONE_TIME,
-//                    targetAccount.getAccountIBAN(),
-//                    targetUser.getEmail(),
-//                    timestamp
-//            ).execute();
-//        }
 
     }
 

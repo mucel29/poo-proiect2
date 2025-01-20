@@ -66,24 +66,16 @@ public class WithdrawSavingsCommand extends Command.Base {
             );
         }
 
+        // Check if the owner meets the minimum age
         if (savingsAccount.getOwner().getAge().getYears() < MINIMUM_AGE) {
             throw new OperationException(
                     "You don't have the minimum age required.",
-                    "You don't have the minimum age required.",
-                    new TransactionHandler(savingsAccount, timestamp)
-            );
-        }
-
-        if (savingsAccount.getOwner().getAccounts().stream().noneMatch(
-                acc -> acc.getAccountType().equals(Account.Type.CLASSIC)
-        )) {
-            throw new OwnershipException(
-                    "You do not have a classic account.",
                     null,
                     new TransactionHandler(savingsAccount, timestamp)
             );
         }
 
+        // Find the first classic account in the given currency
         Optional<Account> target = savingsAccount
                 .getOwner()
                 .getAccounts()
@@ -93,27 +85,25 @@ public class WithdrawSavingsCommand extends Command.Base {
                                 && acc.getAccountType().equals(Account.Type.CLASSIC)
                 ).findFirst();
 
+        // Check if any account was found
         if (target.isEmpty()) {
             throw new OwnershipException(
-                    "Account not found",
+                    "You do not have a classic account.",
                     null,
-                    new CommandDescriptionHandler(this)
+                    new TransactionHandler(savingsAccount, timestamp)
             );
         }
 
+        // Account was found, can use get
         Account targetAccount = target.get();
 
+        // Convert requested amount to the saving account's currency
         Amount senderAmount = amount.to(savingsAccount.getCurrency());
 
-//        senderAmount = savingsAccount.getOwner().getServicePlan().applyFee(senderAmount);
-
-
-
+        // Perform the transfer
         try {
             savingsAccount.authorizeSpending(savingsAccount.getOwner(), senderAmount);
-//            savingsAccount.applyFee(senderAmount);
         } catch (OperationException e) {
-//        if (savingsAccount.getFunds().total() < senderAmount.total()) {
             throw new OperationException(
                     "Insufficient funds",
                     null,
@@ -121,6 +111,7 @@ public class WithdrawSavingsCommand extends Command.Base {
             );
         }
 
+        // Emmit withdrawal transaction
         Transaction savingsTransaction = new Transaction.SvaingsWithdraw(
                 "Savings withdrawal",
                 timestamp
@@ -129,19 +120,12 @@ public class WithdrawSavingsCommand extends Command.Base {
                 .setClassicAccountIBAN(targetAccount.getAccountIBAN())
                 .setAmount(amount.total());
 
-//        savingsAccount.setFunds(savingsAccount.getFunds().sub(senderAmount));
-//        targetAccount.setFunds(targetAccount.getFunds().add(amount));
 
+        // Deposit funds into the target
         targetAccount.authorizeDeposit(targetAccount.getOwner(), amount);
 
         savingsAccount.getTransactions().add(savingsTransaction);
         targetAccount.getTransactions().add(savingsTransaction);
-
-//        super.output(obj -> obj.put(
-//                "description",
-//                "Savings withdrawal"
-//        ));
-
 
     }
 

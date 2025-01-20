@@ -43,18 +43,21 @@ public interface PendingPayment {
 
     /**
      * Accepts the payment
+     *
      * @param observer the one observing the payment
      */
     void accept(PaymentObserver observer);
 
     /**
      * Rejects the payment
+     *
      * @param observer the one observing the payment
      */
     void reject(PaymentObserver observer);
 
     /**
      * Checks whether the payment was dealt with by the given observer
+     *
      * @param observer the one observing the payment
      * @return if the payment was dealt with by the observer
      */

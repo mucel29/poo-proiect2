@@ -21,7 +21,7 @@ import java.util.Map;
 public final class MappedStorage implements StorageProvider {
 
     private final List<User> userList = new ArrayList<>();
-    private final List<Commerciant> commerciantList = new ArrayList<>();
+    private final List<Commerciant> commerciants = new ArrayList<>();
 
     private final Map<String, User> users = new HashMap<>();
     private final Map<String, Account> accounts = new HashMap<>();
@@ -38,7 +38,7 @@ public final class MappedStorage implements StorageProvider {
     }
 
     private boolean isRegistered(final Commerciant commerciant) {
-        return commerciantList.contains(commerciant);
+        return commerciants.contains(commerciant);
     }
 
     private boolean isRegistered(final Account account) {
@@ -83,7 +83,7 @@ public final class MappedStorage implements StorageProvider {
 
         commerciantsByIBAN.put(commerciant.getAccountIBAN(), commerciant);
         commerciantsByName.put(commerciant.getName(), commerciant);
-        commerciantList.add(commerciant);
+        commerciants.add(commerciant);
     }
 
     /**
@@ -348,6 +348,16 @@ public final class MappedStorage implements StorageProvider {
         }
 
         return commerciantsByName.get(name);
+    }
+
+    /**
+     * Retrieves all registered commerciants
+     *
+     * @return an immutable list of commerciants
+     */
+    @Override
+    public List<Commerciant> getCommerciants() {
+        return List.of(commerciants.toArray(new Commerciant[0]));
     }
 
     /**

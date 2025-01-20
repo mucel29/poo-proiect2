@@ -24,6 +24,7 @@ public class MinBalanceCommand extends Command.Base {
 
     /**
      * {@inheritDoc}
+     *
      * @throws OwnershipException if no user owns the given account
      */
     @Override

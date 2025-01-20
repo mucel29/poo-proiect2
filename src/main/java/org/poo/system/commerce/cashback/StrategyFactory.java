@@ -8,8 +8,9 @@ public final class StrategyFactory {
 
     /**
      * Creates a new {@code CommerciantStrategy}
-     * @param commerciant
-     * @param strategyType
+     * @param commerciant the {@code Commerciant} using this strategy
+     * @param strategyType the strategy type to use
+     *
      * @return the requested strategy
      */
     public static CommerciantStrategy getCommerciantStrategy(

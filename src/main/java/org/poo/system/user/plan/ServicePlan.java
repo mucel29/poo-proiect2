@@ -31,6 +31,7 @@ public final class ServicePlan {
 
         /**
          * Converts a {@code String} to an {@code ServicePlan.Tier}
+         *
          * @param label the string to convert
          * @return the corresponding {@code ServicePlan.Tier}
          * @throws InputException if the label can't be converted to an {@code ServicePlan.Tier}
@@ -59,9 +60,11 @@ public final class ServicePlan {
     @Builder.Default
     private double transactionThreshold = 0.0;
 
-    @Singular private final List<Double> spendingCashbacks;
+    @Singular
+    private final List<Double> spendingCashbacks;
 
-    @Singular private final List<Double> upgradeFees;
+    @Singular
+    private final List<Double> upgradeFees;
 
     @Builder.Default
     private double upgradeThreshold = 0;
@@ -75,67 +78,69 @@ public final class ServicePlan {
 
     /**
      * Applies a fee on the given amount depending on the active plan
-     * @param amount
+     *
+     * @param amount the amount that was paid
      * @return the service fee
      */
-   public Amount getFee(
-           final Account account,
-           final Amount amount
-   ) {
-       Amount ronAmount = amount.to("RON");
+    public Amount getFee(
+            final Account account,
+            final Amount amount
+    ) {
+        // Thresholds are in RON, convert the paid amount
+        Amount ronAmount = amount.to("RON");
 
-       if (this.upgradeThreshold > 0) {
-           if (ronAmount.total() > this.upgradeThreshold) {
-               this.upgradeProgress++;
-           }
+        // Check if the plan is upgradeable through transactions
+        if (this.upgradeThreshold > 0) {
+            // Check if the transaction was over
+            // The sum needed to count the transaction
+            // Towards the upgrade
+            if (ronAmount.total() > this.upgradeThreshold) {
+                this.upgradeProgress++;
+            }
 
-           if (
-                   this.upgradeProgress >= this.upgradeTransactions
-                           && this.tier.ordinal() < Tier.values().length - 1
-           ) {
-               new UpgradePlanCommand(
-                       account.getAccountIBAN(),
-                       Tier.values()[this.tier.ordinal() + 1],
-                       BankingSystem.getTimestamp(),
-                       true
-               ).execute();
-//               subscriber.setServicePlan(
-//                       ServicePlanFactory.getPlan(
-//                               subscriber,
-//                               Tier.values()[this.tier.ordinal() + 1]
-//                       )
-//               );
-           }
-       }
-
-        if (ronAmount.total() < transactionThreshold) {
-            return new Amount(0.0, amount.currency());
+            // Check if the transaction threshold was reached
+            // To perform the upgrade
+            // Also check if the current tier isn't the last one
+            if (this.upgradeProgress >= this.upgradeTransactions
+                    && this.tier.ordinal() < Tier.values().length - 1) {
+                // Upgrade the plan to the next tier (also waive the fee)
+                new UpgradePlanCommand(
+                        account.getAccountIBAN(),
+                        Tier.values()[this.tier.ordinal() + 1],
+                        BankingSystem.getTimestamp(),
+                        true
+                ).execute();
+            }
         }
 
+        // Check if the amount is under
+        // The threshold after which the fee is applied (silver)
+        if (ronAmount.total() < transactionThreshold) {
+            return Amount.zero(amount.currency());
+        }
+
+        // Compute the fee in RON
         Amount ronFee = new Amount(
-               ronAmount.total()
-                       * this.transactionFee,
-               "RON"
+                ronAmount.total()
+                        * this.transactionFee,
+                "RON"
         );
 
-
-        // Update plan progress
-
+        // Return the fee in the amount's currency
         return ronFee.to(amount.currency());
-   }
+    }
 
     /**
-     * Applies the cashback for the given tier and active plan
+     * Applies the spending cashback for the given tier and active plan
      *
-     * @param amount
-     * @param spendingTier
+     * @param amount the amount that was paid
+     * @param spendingTier the tier awarded by the commerciant
      * @return the amount to be deduced by the cashback
      */
     public Amount getSpendingCashback(final Amount amount, final int spendingTier) {
         if (this.spendingCashbacks.size() <= spendingTier) {
             throw new OperationException("Unknown tier: " + spendingTier);
         }
-
 
         return new Amount(
                 amount.total()
@@ -146,6 +151,7 @@ public final class ServicePlan {
 
     /**
      * Calculate the upgrade fee from the current tier to the give tier
+     *
      * @param nextTier the tier to upgrade to
      * @return the fee for upgrading to the tier in RON
      * @throws OperationException if the new plan is a downgrade
@@ -153,16 +159,17 @@ public final class ServicePlan {
     public Amount getUpgradeFee(
             final ServicePlan.Tier nextTier
     ) throws OperationException {
-       if (tier.compareTo(nextTier) > 0) {
-           throw new OperationException(
-                   "Current plan: "
-                           + tier
-                           + ", New plan: "
-                           + nextTier
-           );
-       }
+        // Check if the new tier is lower
+        if (tier.compareTo(nextTier) > 0) {
+            throw new OperationException(
+                    "Current plan: "
+                            + tier
+                            + ", New plan: "
+                            + nextTier
+            );
+        }
 
-       return new Amount(upgradeFees.get(nextTier.ordinal()), "RON");
+        return new Amount(upgradeFees.get(nextTier.ordinal()), "RON");
     }
 
 }

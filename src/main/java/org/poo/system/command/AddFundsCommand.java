@@ -30,7 +30,8 @@ public class AddFundsCommand extends Command.Base {
 
     /**
      * {@inheritDoc}
-     * @throws OwnershipException no user owns the given account
+     *
+     * @throws OwnershipException if no user owns the given account
      * @throws OperationException if the user is not authorized to deposit
      */
     @Override

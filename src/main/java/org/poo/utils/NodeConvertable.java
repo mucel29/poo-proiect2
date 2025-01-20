@@ -6,6 +6,7 @@ public interface NodeConvertable {
 
     /**
      * Converts the implementing instance to an {@code ObjectNode}
+     *
      * @return the instance's JSON representation
      */
     ObjectNode toNode();

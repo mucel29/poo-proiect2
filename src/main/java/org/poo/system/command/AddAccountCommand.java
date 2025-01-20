@@ -34,6 +34,7 @@ public class AddAccountCommand extends Command.Base {
 
     /**
      * {@inheritDoc}
+     *
      * @throws UserNotFoundException if the user could not be found
      */
     @Override

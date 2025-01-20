@@ -7,6 +7,7 @@ import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.InputException;
 import org.poo.system.exceptions.OwnershipException;
+import org.poo.system.exceptions.UserNotFoundException;
 import org.poo.system.user.Card;
 import org.poo.system.user.User;
 
@@ -43,34 +44,27 @@ public class DeleteCardCommand extends Command.Base {
 
     /**
      * {@inheritDoc}
+     *
+     * @throws UserNotFoundException if no user exists with the given email
      * @throws OwnershipException if the given card is not owned by the user
      * or no user owns the given card
      */
     @Override
-    public void execute() throws OwnershipException {
-        // Retrieve the user from the storage provider
+    public void execute() throws UserNotFoundException, OwnershipException {
+        // Retrieve the user and card from the storage provider
         User targetUser = BankingSystem.getStorageProvider().getUserByEmail(email);
-
-        // Retrieve the card from the storage provider
         Card targetCard = BankingSystem.getStorageProvider().getCard(cardNumber);
 
-        // Check if the given user matches the card owner
-        // NOTE: this could've been checked more easily
-        // by retrieving the target card
-        // and checking the owner's email with the provided email
-        // but the storage provider also check if the user / account is registered
-//        if (!targetCard.getAccount().getOwner().equals(targetUser)) {
-//            throw new OwnershipException("Card " + cardNumber + " is not owned by " + email);
-//        }
-        if (
-                !ignoreBalance
-                        && targetCard.getAccount().getFunds().total() > 0.0
-        ) {
+        // If the balance shouldn't be ignored and the connected account still has funds,
+        // Cancel the deletion
+        if (!ignoreBalance
+                && targetCard.getAccount().getFunds().total() > 0.0) {
             return;
         }
+
+        // Delete the card
         targetCard.getAccount().authorizeCardDeletion(targetUser, targetCard);
 
-        // Might change card holder to creator
         // Generate destroy transaction on the associated account
         targetCard.getAccount().getTransactions().add(
                 new Transaction.CardOperation("The card has been destroyed", timestamp)

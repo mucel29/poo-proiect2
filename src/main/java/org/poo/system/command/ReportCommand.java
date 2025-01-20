@@ -7,7 +7,6 @@ import org.poo.system.BankingSystem;
 import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.InputException;
-import org.poo.system.exceptions.OperationException;
 import org.poo.system.exceptions.OwnershipException;
 import org.poo.system.exceptions.handlers.CommandDescriptionHandler;
 import org.poo.system.user.Account;
@@ -31,6 +30,7 @@ public class ReportCommand extends Command.Base {
 
     /**
      * {@inheritDoc}
+     *
      * @throws OwnershipException if the given account is not owned by any user
      */
     @Override
@@ -40,7 +40,7 @@ public class ReportCommand extends Command.Base {
         try {
              targetAccount = BankingSystem.getStorageProvider().getAccountByIban(account);
         } catch (OwnershipException e) {
-            throw new OperationException(
+            throw new OwnershipException(
                     "Account not found",
                     e.getMessage(),
                     new CommandDescriptionHandler(this)

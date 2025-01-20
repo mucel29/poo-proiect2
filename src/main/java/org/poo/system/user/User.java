@@ -11,7 +11,8 @@ import org.poo.io.StateWriter;
 import org.poo.system.BankingSystem;
 import org.poo.system.Transaction;
 import org.poo.system.exceptions.InputException;
-import org.poo.system.exceptions.OwnershipException;
+import org.poo.system.exceptions.OperationException;
+import org.poo.system.exchange.Amount;
 import org.poo.system.payments.PaymentObserver;
 import org.poo.system.payments.PaymentOrder;
 import org.poo.system.payments.PendingPayment;
@@ -24,7 +25,6 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -125,41 +125,18 @@ public class User implements NodeConvertable, PaymentObserver {
     }
 
     /**
-     * Finds an account owned by this user
-     * @param account the account number to search for
-     * @return the account instance associated with the IBAN
-     * @throws OwnershipException if the queried account is not owned by this user
-     */
-    public Account getAccount(final String account) throws OwnershipException {
-        try {
-            return this.accounts
-                    .stream()
-                    .filter(a -> a.getAccountIBAN().equals(account))
-                    .toList()
-                    .getFirst();
-        } catch (NoSuchElementException e) {
-            throw new OwnershipException(
-                    "User `"
-                            + this.email
-                            + "` does not own an account with the IBAN `"
-                            + account
-                            + "`"
-            );
-        }
-    }
-
-    /**
      * Aggregates all the accounts' transactions
+     *
      * @return a list containing all the transactions belonging to this user
      */
     public List<Transaction> getTransactions() {
         return accounts
                 .stream()
+                // Check if the user owns the account (filter associate accounts)
                 .filter(account -> account.owner.equals(this))
                 .flatMap(account -> account.getTransactions().stream())
                 .sorted(Transaction::compareTo)
                 .collect(Collectors.toList());
-
     }
 
     /**
@@ -230,7 +207,7 @@ public class User implements NodeConvertable, PaymentObserver {
         return root;
     }
 
-    private Pair<PendingPayment, Integer> getOrder(
+    private Pair<PendingPayment, Integer> getPendingPayment(
             final PendingPayment payment
     ) {
         Optional<Pair<PendingPayment, Integer>> entry =
@@ -249,16 +226,46 @@ public class User implements NodeConvertable, PaymentObserver {
      */
     @Override
     public void register(final PendingPayment payment) {
-        var pending = getOrder(payment);
+        // Retrieve the payment
+        var pending = getPendingPayment(payment);
 
+        // If it isn't registered, add it with one account needed to pay
         if (pending == null) {
             pending = new Pair<>(payment, 1);
             pendingPayments.add(pending);
             return;
         }
 
+        // The payment was already registered, add another account needed to pay
         pendingPayments.remove(pending);
         pendingPayments.add(new Pair<>(pending.first(), pending.second() + 1));
+    }
+
+    /**
+     * Retrieves the first unaddressed payment of the given type
+     *
+     * @param paymentType the type of payment to retrieve
+     * @return the requested payment
+     * @throws OperationException if there are no unadressed payments of the given type
+     */
+    public PendingPayment getFirstPending(final PendingPayment.Type paymentType)
+            throws OperationException {
+        // Retrieve the first unaddressed payment of the given type
+        Optional<PendingPayment> payment =
+                getPendingPayments()
+                        .stream()
+                        .map(Pair::first)
+                        .filter(pendingPayment ->
+                                pendingPayment.getType() == paymentType
+                                        && !pendingPayment.wasDealt(this)
+                        )
+                        .findFirst();
+
+        if (payment.isEmpty()) {
+            throw new OperationException("No pending " + paymentType + " payment found");
+        }
+
+        return payment.get();
     }
 
     /**
@@ -268,13 +275,21 @@ public class User implements NodeConvertable, PaymentObserver {
      */
     @Override
     public void notify(final PaymentOrder order) {
-        var entry = getOrder(order.payment());
+        // Retrieve the pending payment to the associated order
+        var entry = getPendingPayment(order.payment());
+
+        // Return if this account was notified by mistake
         if (entry == null) {
             return;
         }
 
-        order.account().setFunds(order.account().getFunds().sub(order.amount()));
-        order.account().getTransactions().add(order.transaction());
+        Account targetAccount = order.account();
+        Amount orderAmount = order.amount();
+
+        // Authorize the spending
+        // The order was already checked if it can be paid by everyone
+        targetAccount.authorizeSpending(targetAccount.getOwner(), orderAmount);
+        targetAccount.getTransactions().add(order.transaction());
 
         // Remove one account from the payment
         // Don't add it back if all accounts are finished
@@ -294,7 +309,7 @@ public class User implements NodeConvertable, PaymentObserver {
     }
 
     /**
-     *{@inheritDoc}
+     * {@inheritDoc}
      */
     @Override
     public String toString() {

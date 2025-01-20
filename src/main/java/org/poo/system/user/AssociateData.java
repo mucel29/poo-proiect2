@@ -11,6 +11,7 @@ public record AssociateData(
         Amount spent,
         Amount deposited
 ) implements NodeConvertable {
+
     /**
      * Converts the implementing instance to an {@code ObjectNode}
      *

@@ -32,7 +32,7 @@ public final class BankingSystem {
     private StorageProvider storageProvider;
 
     // Set to true to see unhandled errors and detailed messages
-    public static final boolean VERBOSE_LOGGING = true;
+    public static final boolean VERBOSE_LOGGING = false;
 
     private BankingSystem() {
 

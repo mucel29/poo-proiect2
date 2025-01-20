@@ -47,6 +47,7 @@ public final class Utils {
 
     /**
      * Utility method for verifying if a string is a valid IBAN
+     *
      * @param iban the string to check
      * @return whether the string is an IBAN or not
      */
@@ -70,6 +71,7 @@ public final class Utils {
 
     /**
      * Parses a {@code LocalDate}
+     *
      * @throws DateTimeParseException if the date could not be parsed
      */
     public static LocalDate parseDate(final String dateString) throws DateTimeParseException {

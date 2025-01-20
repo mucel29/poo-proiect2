@@ -1,6 +1,5 @@
 package org.poo.main;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.poo.checker.Checker;
 import org.poo.checker.CheckerConstants;
 import org.poo.io.StateWriter;
@@ -67,7 +66,6 @@ public final class Main {
      */
     public static void action(final String filePath1,
                               final String filePath2) throws IOException {
-        ObjectMapper objectMapper = new ObjectMapper();
         File file = new File(CheckerConstants.TESTS_PATH + filePath1);
 
         StateWriter.reset();

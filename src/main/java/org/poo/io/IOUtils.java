@@ -95,6 +95,7 @@ public final class IOUtils {
 
     /**
      * Reads a field and checks if it's a {@code LocalDate}
+     *
      * @param node the node to read from
      * @param fieldName the field to read
      * @return the field's value

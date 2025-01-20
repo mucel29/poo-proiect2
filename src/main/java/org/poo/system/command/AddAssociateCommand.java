@@ -32,13 +32,15 @@ public class AddAssociateCommand extends Command.Base {
     }
 
     /**
-     * Adds an associate to the passed account
-     * @throws OwnershipException
-     * @throws UserNotFoundException
-     * @throws OperationException
+     * {@inheritDoc}
+     *
+     * @throws OwnershipException if no user owns the given account
+     * @throws UserNotFoundException if the user could not be found
+     * @throws OperationException if the user is already an associate
      */
     @Override
     public void execute() throws OwnershipException, UserNotFoundException, OperationException {
+        // Retrieve the account and user
         Account targetAccount;
         User targetUser;
         try {
@@ -58,6 +60,7 @@ public class AddAssociateCommand extends Command.Base {
             );
         }
 
+        // Check if the account is a bussiness one
         if (targetAccount.getAccountType() != Account.Type.BUSINESS) {
             throw new OwnershipException(
                     "Account is not of type business",
@@ -68,6 +71,7 @@ public class AddAssociateCommand extends Command.Base {
 
         BusinessAccount bAccount = (BusinessAccount) targetAccount;
 
+        // Add the associate
         try {
             bAccount.addAssociate(targetUser, role);
         } catch (OperationException e) {

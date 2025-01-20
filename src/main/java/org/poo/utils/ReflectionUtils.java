@@ -20,6 +20,7 @@ public final class ReflectionUtils {
 
     /**
      * Adds a given {@code Field} to an {@code ObjectNode}
+     *
      * @param root the {@code ObjectNode}
      * @param field the {@code Field}
      * @param caller the Declaring object of the field
@@ -76,6 +77,7 @@ public final class ReflectionUtils {
      * Copy fields from one object to another.
      * {@code to} and {@code from} are needed because the
      * caller can specify fields from the object's superclass
+     *
      * @param from the fields to copy from
      * @param to the fields to copy to
      * @param caller the object to which {@code from}  belongs

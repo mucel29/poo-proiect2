@@ -44,19 +44,18 @@ public final class SpendingStrategy extends CommerciantStrategy.Base {
     }
 
     /**
-     * Applies a cashback based on the total spent to a certain Commerciant
      * {@inheritDoc}
+     *
+     * Applies a cashback based on the total spent to a certain Commerciant
      */
     @Override
     public Amount apply(final Account account, final Amount amount) {
-        CommerciantData data = super.getCommerciantData(account);
+        // Record the amount spent to the commerciant
+        commerciant.addSpending(account, amount);
 
-        data.setSpending(
-                data.getSpending()
-                        + amount.to("RON").total()
-        );
-//        data.setTransactionCount(data.getTransactionCount() + 1);
-
+        // Calculate the cashback to be applied using
+        // The total spent to `spendingThreshold` commerciants
+        // To compute the cashback tier
         Amount cashback = account.getOwner()
                 .getServicePlan()
                 .getSpendingCashback(
@@ -65,7 +64,7 @@ public final class SpendingStrategy extends CommerciantStrategy.Base {
                 );
 
         BankingSystem.log(
-                "Total spending: " + data.getSpending() + " RON"
+                "Total spending: " + getTotalSpending(account) + " RON"
         );
 
         BankingSystem.log(
@@ -73,34 +72,11 @@ public final class SpendingStrategy extends CommerciantStrategy.Base {
                         + Tier.getTier(getTotalSpending(account))
                         + " to "
                         + account.getAccountIBAN()
-                        + " [" + data.getType() + "]"
+                        + " [" + commerciant.getType() + "]"
                         + " [" + cashback + "]"
         );
 
-        if (
-                account.getDiscounts().containsKey(commerciant.getType())
-                        && account.getDiscounts().get(commerciant.getType())
-        ) {
-
-            account.getDiscounts().remove(commerciant.getType());
-
-            Amount transactionCashback = new Amount(
-                    amount.total()
-                            * commerciant.getType().getTransactionCashback(),
-                    amount.currency()
-            );
-
-            BankingSystem.log(
-                    "Applied transaction cashback to "
-                            + account.getAccountIBAN()
-                            + " ["
-                            + cashback
-                            + "]"
-            );
-
-            cashback = cashback.add(transactionCashback);
-        }
-
-        return cashback;
+        // Apply coupon (if any)
+        return cashback.add(super.applyCoupon(account, amount));
     }
 }

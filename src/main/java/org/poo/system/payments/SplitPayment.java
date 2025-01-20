@@ -49,11 +49,11 @@ public class SplitPayment implements PendingPayment {
                         .toList()
                 ).setCurrency(totalAmount.currency());
 
+        // Set the `amount` or `amountForUsers` list
         if (type == Type.EQUAL) {
             splitTransaction
                     .setAmount(totalAmount.total() / involvedAccounts.size());
         } else {
-            // Might produce out of order values ???
             splitTransaction
                     .setAmountForUsers(
                             involvedAccounts.stream().map(
@@ -66,9 +66,9 @@ public class SplitPayment implements PendingPayment {
     }
 
     private void complete() {
-        // Maybe check if all observers own at least 1 account
         Transaction.SplitPayment splitTransaction = generateTransaction();
 
+        // Check if everyone can pay
         for (var involvedEntry : involvedAccounts) {
             if (!involvedEntry.first().canPay(involvedEntry.second(), true)) {
 
@@ -81,6 +81,8 @@ public class SplitPayment implements PendingPayment {
             }
         }
 
+        // Notify all observers of the payment result
+        // Whether the payment should be made or not
         notifyAll(splitTransaction);
     }
 
@@ -88,15 +90,21 @@ public class SplitPayment implements PendingPayment {
         for (PaymentObserver observer : observers) {
             for (var involvedEntry : involvedAccounts) {
 
+                // Check if the user owns the account
+                // If not, continue
                 if (!observer.owns(involvedEntry.first())) {
                     continue;
                 }
 
                 Amount amount = involvedEntry.second();
+
+                // If the payment was rejected (or someone didn't have enough funds)
+                // Set the amount to 0
                 if (splitTransaction.getError() != null) {
-                    amount = new Amount(0, involvedEntry.first().getCurrency());
+                    amount = Amount.zero(involvedEntry.first().getCurrency());
                 }
 
+                // Create the order
                 PaymentOrder order = new PaymentOrder(
                         this,
                         involvedEntry.first(),
@@ -104,27 +112,11 @@ public class SplitPayment implements PendingPayment {
                         splitTransaction
                 );
 
+                // Notify the observer
+                // (to deduct the amount or to just remove the payment)
                 observer.notify(order);
             }
         }
-    }
-
-    private void printExpected() {
-        StringBuilder expected = new StringBuilder();
-        for (PaymentObserver observer : observers) {
-            expected
-                    .append(observer.toString())
-                    .append(" [")
-                    .append(accepted.contains(observer))
-                    .append("]\n");
-        }
-
-        BankingSystem.log(
-                "====== ["
-                        + timestamp
-                        + "] =====\n"
-                        + expected
-        );
     }
 
     /**
@@ -139,19 +131,10 @@ public class SplitPayment implements PendingPayment {
                         + " accepted split from timestamp "
                         + timestamp
         );
-        // Mark the entry as accepted (maybe check if it owns any account first?)
+        // Mark the entry as accepted
         accepted.add(observer);
 
-//        BankingSystem.log(
-//                accepted.size()
-//                        + " / "
-//                        + observers.size()
-//                        +
-//                        " for ["
-//                        + timestamp
-//                        + "]\n"
-//        );
-//        printExpected();
+        // Check if everyone accepted the payment
         if (observers.size() == accepted.size()) {
             complete();
         }
@@ -167,9 +150,11 @@ public class SplitPayment implements PendingPayment {
         BankingSystem.log(
                 observer + " rejected split from timestamp " + timestamp
         );
-        Transaction.SplitPayment splitTransaction = generateTransaction()
-                .setError("One user rejected the payment.");
+        // Add the rejected error message
+        Transaction.SplitPayment splitTransaction =
+                generateTransaction().setError("One user rejected the payment.");
 
+        // Notify everyone of the failure
         notifyAll(splitTransaction);
     }
 

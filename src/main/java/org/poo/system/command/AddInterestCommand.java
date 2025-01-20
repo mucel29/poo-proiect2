@@ -23,6 +23,7 @@ public class AddInterestCommand extends Command.Base {
 
     /**
      * {@inheritDoc}
+     *
      * @throws OwnershipException if no user owns the given account
      * @throws OperationException if the account is not a savings one
      */
@@ -40,14 +41,17 @@ public class AddInterestCommand extends Command.Base {
                     );
         }
 
+        // Compute the interest
         Amount rateAmount = new Amount(
                 targetAccount.getFunds().total()
-                * targetAccount.getInterest(), targetAccount.getCurrency());
+                        * targetAccount.getInterest(),
+                targetAccount.getCurrency()
+        );
 
         // Add the interest
-        targetAccount.setFunds(
-                targetAccount.getFunds()
-                        .add(rateAmount)
+        targetAccount.authorizeDeposit(
+                targetAccount.getOwner(),
+                rateAmount
         );
 
         targetAccount.getTransactions().add(

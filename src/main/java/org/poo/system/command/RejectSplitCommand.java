@@ -10,9 +10,6 @@ import org.poo.system.exceptions.UserNotFoundException;
 import org.poo.system.exceptions.handlers.CommandDescriptionHandler;
 import org.poo.system.payments.PendingPayment;
 import org.poo.system.user.User;
-import org.poo.utils.Pair;
-
-import java.util.Optional;
 
 public class RejectSplitCommand extends Command.Base {
 
@@ -33,9 +30,12 @@ public class RejectSplitCommand extends Command.Base {
      * {@inheritDoc}
      *
      * @throws UserNotFoundException if the given email doesn't match a user
+     * @throws OperationException if there are no unaddressed
+     * pending payments of the requested type
      */
     @Override
-    public void execute() throws UserNotFoundException {
+    public void execute() throws UserNotFoundException, OperationException {
+        // Retrieve the user
         User targetUser;
         try {
             targetUser = BankingSystem.getStorageProvider().getUserByEmail(email);
@@ -47,18 +47,8 @@ public class RejectSplitCommand extends Command.Base {
             );
         }
 
-        Optional<PendingPayment> payment = targetUser.getPendingPayments()
-                .stream().map(Pair::first).filter(
-                pendingPayment -> pendingPayment.getType() == paymentType
-                        && !pendingPayment.wasDealt(targetUser)
-        ).findFirst();
-
-        if (payment.isEmpty()) {
-            throw new OperationException("No pending " + paymentType + " payment found");
-        }
-
-        payment.get().reject(targetUser);
-
+        // Rejects the payment, notify the subject
+        targetUser.getFirstPending(paymentType).reject(targetUser);
     }
 
     /**

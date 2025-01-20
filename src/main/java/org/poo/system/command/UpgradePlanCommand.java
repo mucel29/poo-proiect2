@@ -19,6 +19,8 @@ public class UpgradePlanCommand extends Command.Base {
 
     private final String account;
     private final ServicePlan.Tier newTier;
+
+    // Used when instantiating the command for a silver -> gold upgrade
     private final boolean waiveFee;
 
     public UpgradePlanCommand(
@@ -31,6 +33,7 @@ public class UpgradePlanCommand extends Command.Base {
         this.waiveFee = false;
     }
 
+    // Used when instantiating the command for a silver -> gold upgrade
     public UpgradePlanCommand(
             final String account,
             final ServicePlan.Tier newTier,
@@ -45,12 +48,20 @@ public class UpgradePlanCommand extends Command.Base {
     }
 
     /**
-     * Executes the command instance. May produce transactions or errors.
+     * {@inheritDoc}
+     *
+     * @throws OwnershipException if no user owns the given account
+     * @throws OperationException
+     * <ul>
+     *     <li>if the account owner already has the given tier</li>
+     *     <li>if the account owner wants to downgrade their plan</li>
+     *     <li>if the account doesn't have enough funds to upgrade</li>
+     * </ul>
      */
     @Override
-    public void execute() {
+    public void execute() throws OwnershipException, OperationException {
+        // Retrieve the account
         Account targetAccount;
-
         try {
             targetAccount = BankingSystem.getStorageProvider().getAccountByIban(account);
         } catch (OwnershipException e) {
@@ -61,8 +72,10 @@ public class UpgradePlanCommand extends Command.Base {
             );
         }
 
+        // Get the owner's plan
         ServicePlan currentPlan = targetAccount.getOwner().getServicePlan();
 
+        // Check that the upgrade isn't to the current tier
         if (currentPlan.getTier() == newTier) {
             throw new OperationException(
                     "The user already has the "
@@ -78,6 +91,7 @@ public class UpgradePlanCommand extends Command.Base {
 
         Amount upgradeFee;
         try {
+            // Get the upgrade fee (throws an exception if the new tier is lower)
             upgradeFee = currentPlan.getUpgradeFee(newTier);
         } catch (OperationException e) {
             throw new OperationException(
@@ -87,14 +101,15 @@ public class UpgradePlanCommand extends Command.Base {
             );
         }
 
+        // Convert the fee into the account's currency
         upgradeFee = upgradeFee.to(targetAccount.getCurrency());
 
         try {
+            // Pay the upgrade fee only if it wasn't an automatic upgrade
             if (!waiveFee) {
                 targetAccount.authorizeSpending(targetAccount.getOwner(), upgradeFee);
             }
         } catch (OperationException e) {
-//        if (targetAccount.getFunds().total() < upgradeFee.total()) {
             throw new OperationException(
                     "Insufficient funds",
                     "upgradePlan: Insufficient funds",
@@ -102,22 +117,19 @@ public class UpgradePlanCommand extends Command.Base {
             );
         }
 
-
-//        targetAccount.setFunds(targetAccount.getFunds().sub(upgradeFee));
-
         BankingSystem.log(
                 "Upgraded " + targetAccount.getOwner().getEmail()
                         + " to " + newTier.toString()
         );
 
+        // Emmit upgrade transaction
         targetAccount.getTransactions().add(
                 new Transaction.PlanUpgrade("Upgrade plan", timestamp)
                         .setNewPlanType(newTier.toString())
                         .setAccountIBAN(account)
         );
 
-
-
+        // Update the owner's plan
         targetAccount.getOwner().setServicePlan(
                 ServicePlanFactory.getPlan(targetAccount.getOwner(), newTier)
         );

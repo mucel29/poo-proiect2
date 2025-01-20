@@ -43,33 +43,66 @@ public class SendMoneyCommand extends Command.Base {
     }
 
 
+    private void payCommerciant(
+            final User senderUser,
+            final Account senderAccount,
+            final Commerciant commerciant,
+            final Amount senderAmount,
+            final Transaction transaction
+    ) throws OperationException {
+        try {
+            // Pay the commerciant, apply fees, apply cashback
+            senderAccount.authorizeSpending(senderUser, senderAmount);
+            senderAccount.applyFee(senderAmount);
+            senderAccount.applyCashBack(senderUser, commerciant, senderAmount);
+
+            // Emmit the transaction
+            senderAccount.getTransactions().add(transaction);
+
+            BankingSystem.log(
+                    "Paid "
+                            + amount
+                            + " ("
+                            + senderAmount
+                            + ") to "
+                            + commerciant.getName()
+                            + " [transfer]"
+            );
+
+        } catch (OperationException o) {
+            throw new OperationException(
+                    "Insufficient funds",
+                    "Not enough balance: "
+                            + senderAccount.getFunds()
+                            + " (wanted to pay "
+                            + senderAmount
+                            + ")",
+                    new TransactionHandler(senderAccount, timestamp)
+            );
+        }
+    }
+
     /**
      * {@inheritDoc}
-     * @throws OwnershipException if no user owns the sender or receiver accounts
+     *
+     * @throws AliasException if the sender is an alias instead of an account
+     * @throws OwnershipException if no user owns the sender
+     * or receiver / commerciant accounts
      * @throws OperationException
      * <ul>
-     *      <li> if the sender is an alias instead of an account </li>
+     *      <li> if the sender is unauthorized to perform the transfer </li>
      *      <li> if the sender doesn't have enough funds </li>
      * </ul>
      */
     @Override
     public void execute() throws AliasException, OwnershipException, OperationException {
 
-        // Check if there's any receiver
-        if (receiver.isEmpty()) {
-            throw new UserNotFoundException(
-                    "User not found",
-                    "Receiver field is empty",
-                    new CommandDescriptionHandler(this)
-            );
-        }
-
         // Check if the sender is a valid account and not an alias
         if (!Utils.verifyIBAN(sender)) {
             throw new AliasException("Invalid sender IBAN [can't use an user as alias]");
         }
 
-        // Retrieve the sender account from the storage provider
+        // Retrieve the sender account and user from the storage provider
         Account senderAccount = BankingSystem.getStorageProvider().getAccountByIban(sender);
         User senderUser = BankingSystem.getStorageProvider().getUserByEmail(email);
 
@@ -89,75 +122,52 @@ public class SendMoneyCommand extends Command.Base {
             receiverAccount = Utils.verifyIBAN(receiver)
                     ? BankingSystem.getStorageProvider().getAccountByIban(receiver)
                     : BankingSystem.getStorageProvider().getAccountByAlias(receiver);
-        } catch (BankingException e) {
+        } catch (BankingException e) { // Catches OwnershipException or AliasException
+
+            // No registered user account found using the given IBAN
             try {
+                // Trying to find a commerciant with the given IBAN
                 Commerciant commerciant = BankingSystem
                         .getStorageProvider()
                         .getCommerciantByIban(receiver);
 
-                senderAccount.authorizeSpending(senderUser, senderAmount);
-                senderAccount.applyFee(senderAmount);
-                senderAccount.applyCashBack(senderUser, commerciant, senderAmount);
-
-                senderAccount.getTransactions().add(transaction);
-
-                BankingSystem.log(
-                        "Paid "
-                                + amount
-                                + " ("
-                                + senderAmount
-                                + ") to "
-                                + commerciant.getName()
-                                + " [transfer]"
+                // Try to pay the commerciant
+                payCommerciant(
+                        senderUser,
+                        senderAccount,
+                        commerciant,
+                        senderAmount,
+                        transaction
                 );
 
                 return;
-            } catch (UserNotFoundException ex) {
+            } catch (UserNotFoundException unf) {
+                // No account or commerciant found
                 throw new OwnershipException(
-                        "User not found", // kinda dumb ngl
+                        "User not found",
                         "Receiver not found: " + receiver,
                         new CommandDescriptionHandler(this)
-                );
-            } catch (OperationException oe) {
-                throw new OperationException(
-                        "Insufficient funds",
-                        "Not enough balance: "
-                                + senderAccount.getFunds()
-                                + " (wanted to pay "
-                                + senderAmount
-                                + ")",
-                        new TransactionHandler(senderAccount, timestamp)
                 );
             }
         }
 
-        if (amount <= 0.0) {
-            BankingSystem.log("Tried to pay 0.0 to " + receiver);
-            return;
-        }
-
+        // Receiver was indeed a user account
 
         // Convert the total to be transferred to the receiver
         Amount receiverAmount = senderAmount.to(receiverAccount.getCurrency());
 
-        // might change to senderUser
-//        senderAmount =  senderAccount.getOwner().getServicePlan().applyFee(senderAmount);
-
-
-        // Check if the sender has enough funds
-//        if (!senderAccount.canPay(senderAmount, true)) {
         try {
-            BankingSystem.log(
-                    "Authorizing sending: " + senderAmount.add(
-                            senderAccount.getOwner().getServicePlan().getFee(
-                                    senderAccount,
-                                    senderAmount
-                            ))
+            Amount senderFee =
+                    senderAccount
+                            .getOwner()
+                            .getServicePlan()
+                            .getFee(senderAccount, senderAmount);
 
-                    );
-            senderAccount.authorizeSpending(senderUser, senderAmount.add(
-                    senderAccount.getOwner().getServicePlan().getFee(senderAccount, senderAmount)
-            ));
+            // Authorize the transfer
+            senderAccount.authorizeSpending(
+                    senderUser,
+                    senderAmount.add(senderFee)
+            );
         } catch (OperationException e) {
             throw new OperationException(
                     "Insufficient funds",
@@ -172,12 +182,13 @@ public class SendMoneyCommand extends Command.Base {
             );
         }
 
-        // Emmit a copy of the transaction
+        // Emmit a `sent` transaction
         senderAccount.getTransactions().add(transaction.clone());
 
-        // Add the total to the receiver's account and emmit a `received` transaction
-//        receiverAccount.setFunds(receiverAccount.getFunds().add(receiverAmount));
+        // Deposit the funds to the receiver
         receiverAccount.authorizeDeposit(receiverAccount.getOwner(), receiverAmount);
+
+        // Emmit a `received` transaction
         receiverAccount.getTransactions().add(
                 transaction
                         .setCurrency(receiverAccount.getCurrency())

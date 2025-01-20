@@ -9,7 +9,6 @@ import org.poo.io.StateWriter;
 import org.poo.system.BankingSystem;
 import org.poo.system.Transaction;
 import org.poo.system.commerce.Commerciant;
-import org.poo.system.commerce.cashback.CommerciantData;
 import org.poo.system.exceptions.InputException;
 import org.poo.system.exceptions.OperationException;
 import org.poo.system.exceptions.OwnershipException;
@@ -73,15 +72,14 @@ public class Account implements NodeConvertable {
     private String alias = "";
     @Setter
     private double interest;
-    @Setter
+
     protected Amount funds;
     @Setter
     protected double minBalance = 0;
 
     protected final List<Card> cards = new ArrayList<>();
     protected final List<Transaction> transactions = new ArrayList<>();
-    protected final List<CommerciantData> commerciantData = new ArrayList<>();
-    protected final Map<Commerciant.Type, Boolean> discounts = new HashMap<>();
+    protected final Map<Commerciant.Type, Boolean> coupons = new HashMap<>();
 
     public Account(
             final User owner,
@@ -94,22 +92,11 @@ public class Account implements NodeConvertable {
         this.funds = new Amount(0, currency);
         this.accountType = accountType;
 
+        // Mark all coupons as unclaimed
         for (Commerciant.Type type : Commerciant.Type.values()) {
-            discounts.put(type, false);
+            coupons.put(type, false);
         }
 
-    }
-
-    /**
-     * Here just for logging
-     */
-    public Account setFunds(final Amount newFunds) {
-        BankingSystem.log(
-                "[" + owner.getEmail() + "]: " + accountIBAN
-                + " set funds from " + this.funds.total() + " to " + newFunds.total()
-        );
-        this.funds = newFunds;
-        return this;
     }
 
     /**
@@ -140,8 +127,8 @@ public class Account implements NodeConvertable {
      * @param user the user to check for authorization
      * @return whether the user is authorized
      */
-    public boolean isAuthorized(final User user) {
-        return owner.equals(user);
+    public boolean isUnauthorized(final User user) {
+        return !owner.equals(user);
     }
 
     /**
@@ -153,7 +140,7 @@ public class Account implements NodeConvertable {
             final User user,
             final Card card
     ) throws OwnershipException {
-        if (!this.isAuthorized(user)) {
+        if (this.isUnauthorized(user)) {
             throw new OwnershipException(
                     "User "
                             + user.getEmail()
@@ -169,6 +156,7 @@ public class Account implements NodeConvertable {
 
     /**
      * Applies the owner's fee for the given amount
+     *
      * @param amount the amount to take the fee for
      */
     public void applyFee(final Amount amount) {
@@ -187,16 +175,15 @@ public class Account implements NodeConvertable {
             final Commerciant commerciant,
             final Amount amount
     ) {
-        Amount cashback = commerciant.getStrategy().apply(
-                this,
-                amount
-        );
-        // 1.3775
-        // 1.3195
+        Amount cashback = commerciant.getStrategy().apply(this, amount);
+
         if (cashback.total() > 0.0) {
             BankingSystem.log(
-                    accountIBAN + "[cashback]: "
-                            + funds + " -> " + funds.add(cashback)
+                    accountIBAN
+                            + "[cashback]: "
+                            + funds
+                            + " -> "
+                            + funds.add(cashback)
             );
         }
 
@@ -214,8 +201,11 @@ public class Account implements NodeConvertable {
         Amount newBalance = funds.add(amount);
 
         BankingSystem.log(
-                accountIBAN + "[deposit]: "
-                        + funds + " -> " + newBalance
+                accountIBAN
+                        + "[deposit]: "
+                        + funds
+                        + " -> "
+                        + newBalance
         );
 
         funds = newBalance;
@@ -232,6 +222,7 @@ public class Account implements NodeConvertable {
             final Amount amount
     ) throws OperationException {
         Amount newBalance = funds.sub(amount);
+
         if (newBalance.total() < 0.0) {
             throw new OperationException("Insufficient funds");
         }
@@ -240,8 +231,11 @@ public class Account implements NodeConvertable {
         }
 
         BankingSystem.log(
-                accountIBAN + "[spending]: "
-                + funds + " -> " + newBalance
+                accountIBAN
+                        + "[spending]: "
+                        + funds
+                        + " -> "
+                        + newBalance
         );
 
         funds = newBalance;

@@ -79,33 +79,39 @@ public final class ChangeLimitCommand extends Command.Base {
     }
 
     /**
-     * Changes the limit for the business account
-     * @throws OwnershipException
-     * @throws OperationException
+     * {@inheritDoc}
+     *
+     * @throws UserNotFoundException if no user exists with the given email
+     * @throws OwnershipException if no user owns the given account
+     * or the user is unauthorized to perform the action
+     * @throws OperationException if the account is not a business one
      */
-    public void execute() throws OwnershipException, OperationException {
+    public void execute()
+            throws UserNotFoundException, OwnershipException, OperationException {
 
+        // Retrieve the user and account
         Account targetAccount;
         User targetUser;
         try {
             targetAccount = BankingSystem.getStorageProvider().getAccountByIban(account);
             targetUser = BankingSystem.getStorageProvider().getUserByEmail(email);
-        } catch (OwnershipException e) {
-            throw new OwnershipException(
-                    "Account not found",
-                    e.getMessage(),
-                    new CommandErrorHandler(this)
-            );
         } catch (UserNotFoundException e) {
             throw new UserNotFoundException(
                     "User not found",
                     e.getMessage(),
                     new CommandErrorHandler(this)
             );
+        } catch (OwnershipException e) {
+            throw new OwnershipException(
+                    "Account not found",
+                    e.getMessage(),
+                    new CommandErrorHandler(this)
+            );
         }
 
+        // Check if the account is a business one
         if (targetAccount.getAccountType() != Account.Type.BUSINESS) {
-            throw new OwnershipException(
+            throw new OperationException(
                     "This is not a business account",
                     null,
                     new CommandDescriptionHandler(this)
@@ -114,6 +120,7 @@ public final class ChangeLimitCommand extends Command.Base {
 
         BusinessAccount bAccount = (BusinessAccount) targetAccount;
 
+        // Check if the account owns the account (only owner is authorized)
         if (!bAccount.getOwner().equals(targetUser)) {
             throw new OwnershipException(
                     "You must be owner in order to change "
@@ -124,6 +131,7 @@ public final class ChangeLimitCommand extends Command.Base {
             );
         }
 
+        // Update the limit
         switch (type) {
             case SPENDING:
                 bAccount.setSpendingLimit(bAccount.getSpendingLimit().set(amount));
@@ -134,8 +142,6 @@ public final class ChangeLimitCommand extends Command.Base {
             default:
                 break;
         }
-        // Add transaction???
-
 
     }
 

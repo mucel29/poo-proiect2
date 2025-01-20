@@ -5,28 +5,32 @@ import org.poo.system.commerce.Commerciant;
 import org.poo.system.exchange.Amount;
 import org.poo.system.user.Account;
 
+import java.util.Map;
+
 public final class TransactionStrategy extends CommerciantStrategy.Base {
 
     public TransactionStrategy(final Commerciant commerciant) {
         super(commerciant);
     }
 
+    private static final Map<Integer, Commerciant.Type> TRANSACTION_THRESHOLDS =
+            Map.of(
+                    2, Commerciant.Type.FOOD,
+                    5, Commerciant.Type.CLOTHES,
+                    10, Commerciant.Type.TECH
+            );
+
     /**
-     * Applies a cashback based on the number of transactions made to a category
      * {@inheritDoc}
+     *
+     * Applies a cashback based on the number of transactions made to a commerciant
      */
     @Override
     public Amount apply(
             final Account account,
             final Amount amount
     ) {
-        CommerciantData data = super.getCommerciantData(account);
-
-//        data.setTransactionCount(data.getTransactionCount() + 1);
-//        if (BankingSystem.getTimestamp() == 122) {
-//            System.out.println("576349");
-//        }
-
+        // Add the transaction the commerciant
         commerciant.addTransaction(account);
 
         BankingSystem.log(
@@ -38,43 +42,19 @@ public final class TransactionStrategy extends CommerciantStrategy.Base {
                 + "]"
         );
 
-        if (
-                commerciant.getTransactionCount(account)
-                        == commerciant.getType().getTransactionThreshold()
-        ) {
+        // Check if any transaction threshold was reached
+        Commerciant.Type coupon = TRANSACTION_THRESHOLDS
+                .get(commerciant.getTransactionCount(account));
+        if (coupon != null) {
 
-            if (account.getDiscounts().containsKey(commerciant.getType())) {
-                account.getDiscounts().put(commerciant.getType(), true);
+            // Activate the coupon if it wasn't redeemed
+            if (account.getCoupons().containsKey(coupon)) {
+                account.getCoupons().put(coupon, true);
             }
-            return new Amount(0, amount.currency());
+
+            return Amount.zero(amount.currency());
         }
 
-            if (
-                    account.getDiscounts().containsKey(commerciant.getType())
-                            && account.getDiscounts().get(commerciant.getType())
-            ) {
-                account.getDiscounts().remove(commerciant.getType());
-
-                Amount cashback = new Amount(
-                        amount.total()
-                                * commerciant.getType().getTransactionCashback(),
-                        amount.currency()
-                );
-
-                BankingSystem.log(
-                        "Applied transaction cashback to "
-                                + account.getAccountIBAN()
-                                + " ["
-                                + cashback
-                                + "]"
-                );
-
-                return cashback;
-            }
-
-
-
-
-        return new Amount(0, amount.currency());
+        return super.applyCoupon(account, amount);
     }
 }

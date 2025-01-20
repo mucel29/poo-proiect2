@@ -1,13 +1,14 @@
 package org.poo.system.commerce.cashback;
 
+import org.poo.system.BankingSystem;
 import org.poo.system.commerce.Commerciant;
 import org.poo.system.exceptions.InputException;
 import org.poo.system.exchange.Amount;
 import org.poo.system.user.Account;
 
 import java.util.Arrays;
+import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 
 public interface CommerciantStrategy {
 
@@ -54,7 +55,8 @@ public interface CommerciantStrategy {
      *
      * @param account the account on which to apply the strategy on
      * @param amount the total to be paid
-     * @return the new total
+     *
+     * @return the value of the cashback
      */
     Amount apply(Account account, Amount amount);
 
@@ -68,43 +70,61 @@ public interface CommerciantStrategy {
         }
 
         /**
-         * Retrieves the commerciant data from an account if it matches the type
-         * </br>
-         * Otherwise, it creates a new data entry
-         * @param account the account to search through
-         * @return the account's commerciant data
-         */
-        protected CommerciantData getCommerciantData(final Account account) {
-
-            Optional<CommerciantData> oData = account.getCommerciantData().stream().filter(
-                    cData -> cData.getType() == commerciant.getType()
-            ).findFirst();
-
-            CommerciantData data;
-
-            if (oData.isEmpty()) {
-                data = new CommerciantData(commerciant.getType(), 0, 0);
-                account.getCommerciantData().add(data);
-            } else {
-                data = oData.get();
-            }
-
-            return data;
-        }
-
-        /**
          * Retrieves the amount spent to the `spendingThreshold` category
+         *
          * @param account the account to retrieve de total spendings
          * @return the total spendings made by the given account
          */
         protected double getTotalSpending(final Account account) {
-            double totalSpending = 0;
+            return BankingSystem
+                    .getStorageProvider()
+                    .getCommerciants()
+                    .stream()
+                    .map(comm -> comm.getSpendings(account))
+                    .reduce(0.0, Double::sum);
+        }
 
-            for (CommerciantData data : account.getCommerciantData()) {
-                totalSpending += data.getSpending();
+        /**
+         * Checks if the given account is eligible for a coupon and applies it
+         *
+         * @param account the account to check
+         * @param amount the amount of the transaction
+         *
+         * @return the coupon cashback or 0
+         */
+        protected Amount applyCoupon(
+                final Account account,
+                final Amount amount
+        ) {
+
+            Map<Commerciant.Type, Boolean> coupons = account.getCoupons();
+
+            // Check if the coupon was already redeemed, or it isn't available yet
+            if (!coupons.containsKey(commerciant.getType())
+                    || !coupons.get(commerciant.getType())) {
+                return Amount.zero(account.getCurrency());
             }
 
-            return totalSpending;
+            // Remove the coupon, marking the coupon as redeemed
+            account.getCoupons().remove(commerciant.getType());
+
+            // Calculate the cashback total
+            Amount couponCashback = new Amount(
+                    amount.total()
+                            * commerciant.getType().getTransactionCashback(),
+                    amount.currency()
+            );
+
+            BankingSystem.log(
+                    "Applied coupon to "
+                            + account.getAccountIBAN()
+                            + " ["
+                            + couponCashback
+                            + "]"
+            );
+
+            return couponCashback;
+
         }
 
     }

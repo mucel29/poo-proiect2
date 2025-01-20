@@ -5,9 +5,18 @@ import org.poo.system.BankingSystem;
 public record Amount(double total, String currency) {
 
     /**
+     * Creates a new {@code Amount} of 0 in the given currency
+     * @param currency the amount's currency
+     * @return a new {@code Amount} of 0
+     */
+    public static Amount zero(final String currency) {
+        return new Amount(0, currency);
+    }
+
+    /**
      * Converts the current amount to the given currency
      * @param newCurrency
-     * @return
+     * @return a new amount in the requested currency
      */
     public Amount to(final String newCurrency) {
         return new Amount(
@@ -20,8 +29,9 @@ public record Amount(double total, String currency) {
 
     /**
      * Subtracts the value from the amount
+     *
      * @param value
-     * @return
+     * @return a new amount with {@code value} subtracted from it
      */
     public Amount sub(final double value) {
         return new Amount(total - value, currency);
@@ -29,8 +39,9 @@ public record Amount(double total, String currency) {
 
     /**
      * Adds the value to the amount
+     *
      * @param value
-     * @return
+     * @return a new amount with {@code value} added to it
      */
     public Amount add(final double value) {
         return new Amount(total + value, currency);
@@ -38,8 +49,9 @@ public record Amount(double total, String currency) {
 
     /**
      * Subtracts another amount from this one, making the conversion from other to this
+     *
      * @param other
-     * @return
+     * @return a new amount with {@code other} subtracted from it
      */
     public Amount sub(final Amount other) {
         if (currency.equals(other.currency)) {
@@ -51,8 +63,9 @@ public record Amount(double total, String currency) {
 
     /**
      * Adds another amount to this one, making the conversion from other to this
+     *
      * @param other
-     * @return
+     * @return a new amount with {@code other} added to it
      */
     public Amount add(final Amount other) {
         if (currency.equals(other.currency)) {
@@ -63,9 +76,11 @@ public record Amount(double total, String currency) {
     }
 
     /**
-     * Creates a new amount from the existing one with the new total
-     * @param newTotal
-     * @return
+     * Creates a new amount using
+     * the instance's currency and the provided new total
+     *
+     * @param newTotal the value used for the new {@code Amount}
+     * @return a new amount with the new total
      */
     public Amount set(final double newTotal) {
         return new Amount(newTotal, currency);

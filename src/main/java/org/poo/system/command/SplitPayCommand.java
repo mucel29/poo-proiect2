@@ -20,7 +20,6 @@ import java.util.stream.IntStream;
 public class SplitPayCommand extends Command.Base {
 
     private final PendingPayment.Type type;
-    private final String currency;
     private final Amount totalAmount;
     private final List<Pair<String, Amount>> userAmounts = new ArrayList<>();
 
@@ -31,11 +30,15 @@ public class SplitPayCommand extends Command.Base {
     ) {
         super(Type.SPLIT_PAYMENT);
         this.type = type;
-        this.currency = currency;
         this.userAmounts.addAll(userAmounts);
-        this.totalAmount = userAmounts.stream().map(Pair::second).reduce(
-                new Amount(0, currency), Amount::add
-        );
+        this.totalAmount =
+                userAmounts
+                        .stream()
+                        .map(Pair::second)
+                        .reduce(
+                                Amount.zero(currency),
+                                Amount::add
+                        );
     }
 
     /**
@@ -45,13 +48,23 @@ public class SplitPayCommand extends Command.Base {
      */
     @Override
     public void execute() throws OwnershipException {
-        BankingSystem.log("total amount to be paid: " + totalAmount);
+
+        BankingSystem.log(
+                "Initiated "
+                        + type
+                        + " split payment of "
+                        + totalAmount
+        );
+
+        // Create the `SplitPayment` observer
         SplitPayment payment = new SplitPayment(type, totalAmount, timestamp);
         for (var userAmount : userAmounts) {
+            // Retrieve the account
             Account involvedAccount = BankingSystem
                     .getStorageProvider()
                     .getAccountByIban(userAmount.first());
 
+            // Add it to the payment with its amount
             payment.getInvolvedAccounts().add(new Pair<>(
                     involvedAccount,
                     userAmount.second()
@@ -59,6 +72,7 @@ public class SplitPayCommand extends Command.Base {
 
             payment.getObservers().add(involvedAccount.getOwner());
 
+            // Register the pending payment to the account owner
             involvedAccount.getOwner().register(payment);
         }
     }
@@ -90,6 +104,7 @@ public class SplitPayCommand extends Command.Base {
 
         switch (type) {
             case PendingPayment.Type.EQUAL:
+                // Read the amount and add the divided amount to each account
                 double amount = IOUtils.readDoubleChecked(node, "amount");
                 amounts.addAll(Collections.nCopies(
                         accounts.size(),
@@ -97,6 +112,7 @@ public class SplitPayCommand extends Command.Base {
                 ));
                 break;
             case PendingPayment.Type.CUSTOM:
+                // Read each amount and add it to each account
                 JsonNode amountsNode = node.get("amountForUsers");
                 if (amountsNode == null || !amountsNode.isArray()) {
                     throw new InputException("amountForUsers must be an array");
@@ -116,6 +132,7 @@ public class SplitPayCommand extends Command.Base {
             );
         }
 
+        // Create a pairing of IBAN and amount for each account
         List<Pair<String, Amount>> userAmounts =
                 IntStream.range(0, accounts.size())
                         .boxed()

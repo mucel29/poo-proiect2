@@ -30,25 +30,21 @@ public class DeleteAccountCommand extends Command.Base {
 
     /**
      * {@inheritDoc}
+     *
      * @throws UserNotFoundException if no user with the given email was found
      * @throws OwnershipException if the given account is not owned by the given user
      * @throws OperationException if the account still has funds
      */
     @Override
     public void execute() throws UserNotFoundException, OwnershipException, OperationException {
-        // Retrieve the user from the storage provider
+        // Retrieve the user and account from the storage provider
         User targetUser = BankingSystem.getStorageProvider().getUserByEmail(email);
+        Account targetAccount = BankingSystem.getStorageProvider().getAccountByIban(account);
 
-        // Check if the given user matches the account owner
-        // NOTE: this could've been checked more easily
-        // by retrieving the target account
-        // and checking the owner's email with the provided email
-        // but the storage provider also check if the user / account is registered
-        if (!BankingSystem.getStorageProvider().getUserByIban(account).equals(targetUser)) {
+        // Check if the user owns the account (only the owner can delete the account)
+        if (!targetAccount.getOwner().equals(targetUser)) {
             throw new OwnershipException("Account " + account + " does not belong to " + email);
         }
-
-        Account targetAccount = BankingSystem.getStorageProvider().getAccountByIban(account);
 
         // If the user still has funds, generate errors
         if (targetAccount.getFunds().total() > 0) {

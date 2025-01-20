@@ -14,7 +14,6 @@ import org.poo.system.exceptions.handlers.CommandErrorHandler;
 import org.poo.system.user.Account;
 import org.poo.system.user.AssociateData;
 import org.poo.system.user.BusinessAccount;
-import org.poo.system.user.User;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -73,71 +72,29 @@ public final class BusinessReportCommand extends Command.Base {
         this.endTimestamp = endTimestamp;
     }
 
-    private int compareData(
-            final AssociateData data1,
-            final AssociateData data2
-    ) {
-        User user1 = data1.associate();
-        User user2 = data2.associate();
-
-//        Amount net1 = data1.deposited().sub(data1.spent());
-//        Amount net2 = data2.deposited().sub(data2.spent());
-//
-//        if (net1.total() == 0.0)
-//            return 1;
-//
-//        if (net2.total() == 0.0)
-//            return -1;
-//
-//        return Double.compare(
-//                net2.total(),
-//                net1.total()
-//        );
-
-//        int depositCompare = Double.compare(
-//                data2.deposited().total(),
-//                data1.deposited().total()
-//        );
-//
-//        if (depositCompare != 0) {
-//            return depositCompare;
-//        }
-
-        if (
-                data1.spent().total() == 0.0
-                        && data2.spent().total() != 0.0
-        ) {
-            return 1;
-        } else if (
-                data1.spent().total() != 0.0
-                        && data2.spent().total() == 0.0
-        ) {
-            return -1;
-        }
-
-        return Double.compare(
-                data1.spent().total(),
-                data2.spent().total()
-        );
-
-//        return spentCompare;
-    }
-
+    /**
+     * {@inheritDoc}
+     *
+     * @throws OwnershipException if no user owns the given account
+     * @throws OperationException if the account is not a business one
+     */
     @Override
     public void execute() throws OwnershipException, OperationException {
+        // Retrieve the account
         Account targetAccount;
         try {
             targetAccount = BankingSystem.getStorageProvider().getAccountByIban(account);
         } catch (OwnershipException e) {
-            throw new OperationException(
+            throw new OwnershipException(
                     "Account not found",
                     e.getMessage(),
                     new CommandDescriptionHandler(this)
             );
         }
 
+        // Check if the account is a business one
         if (targetAccount.getAccountType() != Account.Type.BUSINESS) {
-            throw new OwnershipException(
+            throw new OperationException(
                     "Account is not of type business",
                     null,
                     new CommandErrorHandler(this)
@@ -146,7 +103,7 @@ public final class BusinessReportCommand extends Command.Base {
 
         BusinessAccount bAccount = (BusinessAccount) targetAccount;
 
-        // Print the account's transaction record
+        // Print the account's limits and requested statistic
         super.output((root) -> {
             root.put("balance", targetAccount.getFunds().total());
             root.put("IBAN", account);
@@ -163,15 +120,15 @@ public final class BusinessReportCommand extends Command.Base {
                 double totalSpent = 0.0;
                 double totalDeposited = 0.0;
 
-//                bAccount.getAssociateDataList().sort(this::compareData);
-
                 for (AssociateData aData : bAccount.getAssociateDataList()) {
+                    // Add the associate to it's corresponding array node
                     switch (aData.role()) {
                         case MANAGER -> managerArray.add(aData.toNode());
                         case EMPLOYEE -> employeeArray.add(aData.toNode());
                         default -> {
                         }
                     }
+                    // Add their deposit and spending
                     totalSpent += aData.spent().total();
                     totalDeposited += aData.deposited().total();
 
@@ -180,10 +137,16 @@ public final class BusinessReportCommand extends Command.Base {
                 root.put("total spent", totalSpent);
                 root.put("total deposited", totalDeposited);
             } else {
+                // Commerciant statistic
+
                 ArrayNode commerciantsArray = root.putArray("commerciants");
+
+                // Sort commerciant spendings by name
                 bAccount.getCommerciantSpendingList().sort(
                         Comparator.comparing(CommerciantSpending::getName)
                 );
+
+                // Add each commerciant spending
                 for (CommerciantSpending spending : bAccount.getCommerciantSpendingList()) {
                     commerciantsArray.add(spending.toNode());
                 }

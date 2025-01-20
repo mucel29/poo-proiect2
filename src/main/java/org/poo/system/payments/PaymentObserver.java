@@ -6,12 +6,14 @@ public interface PaymentObserver {
 
     /**
      * Registers the pending payment to the observer
+     *
      * @param payment the payment to register
      */
     void register(PendingPayment payment);
 
     /**
      * Notifies the observer of a payment to be made
+     *
      * @param order the payment order to execute
      */
     void notify(PaymentOrder order);

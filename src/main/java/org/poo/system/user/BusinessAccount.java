@@ -64,6 +64,7 @@ public class BusinessAccount extends Account {
 
     /**
      * Adds a new associate to the account
+     *
      * @param associate the associate
      * @param role a role
      * @throws OperationException if the user is already associated
@@ -78,16 +79,20 @@ public class BusinessAccount extends Account {
             );
         }
 
+        // Retrieve the associate data
         AssociateData data;
         try {
             data = getAssociateData(associate);
         } catch (OwnershipException e) {
+            // The user is not an associate, which is good
+            // Add it
             associateDataList.add(new AssociateData(
                     associate,
                     role,
-                    new Amount(0, funds.currency()),
-                    new Amount(0, funds.currency())
+                    Amount.zero(funds.currency()),
+                    Amount.zero(funds.currency())
             ));
+            // Give access to the associate to the account
             associate.getAccounts().add(this);
 
             BankingSystem.log(
@@ -101,7 +106,7 @@ public class BusinessAccount extends Account {
 
         }
 
-
+        // Associate was found, can't have multiple roles
         throw new OperationException(
                 "Associate "
                         + associate.getEmail()
@@ -120,9 +125,11 @@ public class BusinessAccount extends Account {
     public AssociateData getAssociateData(
             final User associate
     ) throws OwnershipException {
-        Optional<AssociateData> associateData = associateDataList.stream().filter(
-                ad -> ad.associate().equals(associate)
-        ).findFirst();
+        Optional<AssociateData> associateData =
+                associateDataList
+                        .stream()
+                        .filter(ad -> ad.associate().equals(associate))
+                        .findFirst();
 
         if (associateData.isEmpty()) {
             throw new OwnershipException(
@@ -194,18 +201,19 @@ public class BusinessAccount extends Account {
      * @return whether the user is authorized
      */
     @Override
-    public boolean isAuthorized(final User user) {
-        if (super.isAuthorized(user)) {
-            return true;
-        }
-
-        try {
-            getAssociateData(user);
-        } catch (OwnershipException e) {
+    public boolean isUnauthorized(final User user) {
+        if (!super.isUnauthorized(user)) {
             return false;
         }
 
-        return true;
+        // If the user is not the owner, check if it's an associate
+        try {
+            getAssociateData(user);
+        } catch (OwnershipException e) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -219,10 +227,8 @@ public class BusinessAccount extends Account {
             final Card card
     ) throws OwnershipException {
         AssociateData associateData = getAssociateData(user);
-        if (
-                associateData.role() == Role.EMPLOYEE
-                && !card.getCreator().equals(user)
-        ) {
+        if (associateData.role() == Role.EMPLOYEE
+                && !card.getCreator().equals(user)) {
             throw new OwnershipException("You are not authorized to make this transaction.");
         }
 
@@ -249,22 +255,13 @@ public class BusinessAccount extends Account {
 
         Amount newDeposited = associateData.deposited().add(amount);
 
-//        BankingSystem.log(
-//                user.getUsername()
-//                + " is trying to deposit "
-//                + n
-//        );
-
-        if (
-                associateData.role() != Role.MANAGER
-                        && amount.sub(depositLimit).total() > 0.0
-        ) {
+        if (associateData.role() != Role.MANAGER
+                && amount.sub(depositLimit).total() > 0.0) {
             throw new OperationException("You are not authorized to make this transaction.");
         }
 
         super.authorizeDeposit(user, amount);
         updateDeposit(user, newDeposited);
-
     }
 
     /**
@@ -287,22 +284,21 @@ public class BusinessAccount extends Account {
 
         Amount newSpending = associateData.spent().add(amount);
 
-        if (
-                associateData.role() != Role.MANAGER
-                        && amount.sub(spendingLimit).total() > 0.0
-        ) {
+        if (associateData.role() != Role.MANAGER
+                && amount.sub(spendingLimit).total() > 0.0) {
             throw new OperationException("You are not authorized to make this transaction.");
         }
 
         super.authorizeSpending(user, amount);
         updateSpending(user, newSpending);
-
     }
 
     private CommerciantSpending getCommerciantSpending(final String commerciantName) {
-        Optional<CommerciantSpending> oSpending = commerciantSpendingList.stream().filter(
-                cs -> cs.getName().equals(commerciantName)
-        ).findFirst();
+        Optional<CommerciantSpending> oSpending =
+                commerciantSpendingList
+                        .stream()
+                        .filter(cs -> cs.getName().equals(commerciantName))
+                        .findFirst();
 
         CommerciantSpending spending = oSpending.orElse(null);
 
@@ -329,12 +325,13 @@ public class BusinessAccount extends Account {
     ) {
         super.applyCashBack(user, commerciant, amount);
 
+        // If the user is the owner, don't count them towards the
+        // `transaction` report
         if (owner.equals(user)) {
             return;
         }
 
         CommerciantSpending commerciantSpending = getCommerciantSpending(commerciant.getName());
-
         commerciantSpending.setReceived(commerciantSpending.getReceived().add(amount));
 
 

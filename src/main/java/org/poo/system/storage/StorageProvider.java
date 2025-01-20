@@ -130,6 +130,13 @@ public interface StorageProvider {
 
 
     /**
+     * Retrieves all registered commerciants
+     *
+     * @return an immutable list of commerciants
+     */
+    List<Commerciant> getCommerciants();
+
+    /**
      * Finds an account
      *
      * @param iban the account's IBAN to search for
