@@ -3,9 +3,12 @@ package org.poo.system.user.plan;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Singular;
+import org.poo.system.BankingSystem;
+import org.poo.system.command.UpgradePlanCommand;
 import org.poo.system.exceptions.InputException;
 import org.poo.system.exceptions.OperationException;
 import org.poo.system.exchange.Amount;
+import org.poo.system.user.Account;
 import org.poo.system.user.User;
 
 import java.util.Arrays;
@@ -75,8 +78,35 @@ public final class ServicePlan {
      * @param amount
      * @return the service fee
      */
-   public Amount getFee(final Amount amount) {
-        Amount ronAmount = amount.to("RON");
+   public Amount getFee(
+           final Account account,
+           final Amount amount
+   ) {
+       Amount ronAmount = amount.to("RON");
+
+       if (this.upgradeThreshold > 0) {
+           if (ronAmount.total() > this.upgradeThreshold) {
+               this.upgradeProgress++;
+           }
+
+           if (
+                   this.upgradeProgress >= this.upgradeTransactions
+                           && this.tier.ordinal() < Tier.values().length - 1
+           ) {
+               new UpgradePlanCommand(
+                       account.getAccountIBAN(),
+                       Tier.values()[this.tier.ordinal() + 1],
+                       BankingSystem.getTimestamp(),
+                       true
+               ).execute();
+//               subscriber.setServicePlan(
+//                       ServicePlanFactory.getPlan(
+//                               subscriber,
+//                               Tier.values()[this.tier.ordinal() + 1]
+//                       )
+//               );
+           }
+       }
 
         if (ronAmount.total() < transactionThreshold) {
             return new Amount(0.0, amount.currency());
@@ -90,23 +120,6 @@ public final class ServicePlan {
 
 
         // Update plan progress
-       if (this.upgradeThreshold > 0) {
-           if (ronAmount.total() > this.upgradeThreshold) {
-               this.upgradeTransactions++;
-           }
-
-           if (
-                   this.upgradeTransactions >= this.upgradeThreshold
-                           && this.tier.ordinal() < Tier.SILVER.ordinal() - 1
-           ) {
-                subscriber.setServicePlan(
-                        ServicePlanFactory.getPlan(
-                                subscriber,
-                                Tier.values()[this.tier.ordinal() + 1]
-                        )
-                );
-           }
-       }
 
         return ronFee.to(amount.currency());
    }

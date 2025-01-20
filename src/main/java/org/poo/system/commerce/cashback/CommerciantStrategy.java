@@ -59,10 +59,12 @@ public interface CommerciantStrategy {
     Amount apply(Account account, Amount amount);
 
     abstract class Base implements CommerciantStrategy {
-        protected final Commerciant.Type commerciantType;
+        protected final Commerciant commerciant;
 
-        protected Base(final Commerciant.Type commerciantType) {
-            this.commerciantType = commerciantType;
+        protected Base(
+                final Commerciant commerciant
+        ) {
+            this.commerciant = commerciant;
         }
 
         /**
@@ -75,19 +77,34 @@ public interface CommerciantStrategy {
         protected CommerciantData getCommerciantData(final Account account) {
 
             Optional<CommerciantData> oData = account.getCommerciantData().stream().filter(
-                    cData -> cData.getType() == commerciantType
+                    cData -> cData.getType() == commerciant.getType()
             ).findFirst();
 
             CommerciantData data;
 
             if (oData.isEmpty()) {
-                data = new CommerciantData(commerciantType, 0, 0);
+                data = new CommerciantData(commerciant.getType(), 0, 0);
                 account.getCommerciantData().add(data);
             } else {
                 data = oData.get();
             }
 
             return data;
+        }
+
+        /**
+         * Retrieves the amount spent to the `spendingThreshold` category
+         * @param account the account to retrieve de total spendings
+         * @return the total spendings made by the given account
+         */
+        protected double getTotalSpending(final Account account) {
+            double totalSpending = 0;
+
+            for (CommerciantData data : account.getCommerciantData()) {
+                totalSpending += data.getSpending();
+            }
+
+            return totalSpending;
         }
 
     }

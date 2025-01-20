@@ -19,6 +19,7 @@ public class UpgradePlanCommand extends Command.Base {
 
     private final String account;
     private final ServicePlan.Tier newTier;
+    private final boolean waiveFee;
 
     public UpgradePlanCommand(
             final String account,
@@ -27,6 +28,20 @@ public class UpgradePlanCommand extends Command.Base {
         super(Command.Type.UPGRADE_PLAN);
         this.account = account;
         this.newTier = newTier;
+        this.waiveFee = false;
+    }
+
+    public UpgradePlanCommand(
+            final String account,
+            final ServicePlan.Tier newTier,
+            final int timestamp,
+            final boolean waiveFee
+    ) {
+        super(Command.Type.UPGRADE_PLAN);
+        this.account = account;
+        this.newTier = newTier;
+        this.timestamp = timestamp;
+        this.waiveFee = waiveFee;
     }
 
     /**
@@ -74,7 +89,12 @@ public class UpgradePlanCommand extends Command.Base {
 
         upgradeFee = upgradeFee.to(targetAccount.getCurrency());
 
-        if (targetAccount.getFunds().total() < upgradeFee.total()) {
+        try {
+            if (!waiveFee) {
+                targetAccount.authorizeSpending(targetAccount.getOwner(), upgradeFee);
+            }
+        } catch (OperationException e) {
+//        if (targetAccount.getFunds().total() < upgradeFee.total()) {
             throw new OperationException(
                     "Insufficient funds",
                     "upgradePlan: Insufficient funds",
@@ -83,7 +103,7 @@ public class UpgradePlanCommand extends Command.Base {
         }
 
 
-        targetAccount.setFunds(targetAccount.getFunds().sub(upgradeFee));
+//        targetAccount.setFunds(targetAccount.getFunds().sub(upgradeFee));
 
         BankingSystem.log(
                 "Upgraded " + targetAccount.getOwner().getEmail()

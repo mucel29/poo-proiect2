@@ -106,9 +106,9 @@ public final class ChangeLimitCommand extends Command.Base {
 
         if (targetAccount.getAccountType() != Account.Type.BUSINESS) {
             throw new OwnershipException(
-                    "Account is not of type business",
+                    "This is not a business account",
                     null,
-                    new CommandErrorHandler(this)
+                    new CommandDescriptionHandler(this)
             );
         }
 
@@ -116,7 +116,9 @@ public final class ChangeLimitCommand extends Command.Base {
 
         if (!bAccount.getOwner().equals(targetUser)) {
             throw new OwnershipException(
-                    "You must be owner in order to change spending limit.",
+                    "You must be owner in order to change "
+                            + type
+                            + " limit.",
                     null,
                     new CommandDescriptionHandler(this)
             );

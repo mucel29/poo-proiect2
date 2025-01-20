@@ -111,6 +111,28 @@ public class CashWithdrawCommand extends Command.Base {
                 new Transaction.CashWithdrawal("Cash withdrawal of " + amount, timestamp)
                         .setAmount(amount)
         );
+
+        // Generate a new one time card
+//        if (targetCard.getCardType() == Card.Type.ONE_TIME) {
+//            try {
+//                new DeleteCardCommand(
+//                        targetCard.getCardNumber(),
+//                        // change to account owner
+//                        targetUser.getEmail(),
+//                        timestamp,
+//                        false
+//                ).execute();
+//            } catch (OwnershipException e) {
+//                return;
+//            }
+//            new CreateCardCommand(
+//                    Card.Type.ONE_TIME,
+//                    targetAccount.getAccountIBAN(),
+//                    targetUser.getEmail(),
+//                    timestamp
+//            ).execute();
+//        }
+
     }
 
     /**

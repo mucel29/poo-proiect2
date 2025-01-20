@@ -14,6 +14,7 @@ public class DeleteCardCommand extends Command.Base {
 
     private final String cardNumber;
     private final String email;
+    private final boolean ignoreBalance;
 
     public DeleteCardCommand(
             final String cardNumber,
@@ -22,18 +23,21 @@ public class DeleteCardCommand extends Command.Base {
         super(Type.DELETE_CARD);
         this.cardNumber = cardNumber;
         this.email = email;
+        this.ignoreBalance = false;
     }
 
     // Package private constructor
     DeleteCardCommand(
             final String cardNumber,
             final String email,
-            final int timestamp
+            final int timestamp,
+            final boolean ignoreBalance
     ) {
         super(Type.DELETE_CARD);
         this.cardNumber = cardNumber;
         this.email = email;
         this.timestamp = timestamp;
+        this.ignoreBalance = ignoreBalance;
     }
 
 
@@ -58,6 +62,12 @@ public class DeleteCardCommand extends Command.Base {
 //        if (!targetCard.getAccount().getOwner().equals(targetUser)) {
 //            throw new OwnershipException("Card " + cardNumber + " is not owned by " + email);
 //        }
+        if (
+                !ignoreBalance
+                        && targetCard.getAccount().getFunds().total() > 0.0
+        ) {
+            return;
+        }
         targetCard.getAccount().authorizeCardDeletion(targetUser, targetCard);
 
         // Might change card holder to creator

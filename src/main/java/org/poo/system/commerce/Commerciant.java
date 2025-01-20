@@ -8,10 +8,13 @@ import org.poo.system.BankingSystem;
 import org.poo.system.commerce.cashback.CommerciantStrategy;
 import org.poo.system.commerce.cashback.StrategyFactory;
 import org.poo.system.exceptions.InputException;
+import org.poo.system.user.Account;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 @Getter
@@ -65,18 +68,37 @@ public final class Commerciant {
     private final Type type;
     private final CommerciantStrategy strategy;
 
+    private final Map<Account, Integer> transactions = new HashMap<>();
+
     public Commerciant(
             final String name,
             final int id,
             final String accountIBAN,
             final Type type,
-            final CommerciantStrategy strategy
+            final CommerciantStrategy.Type strategy
     ) {
         this.name = name;
         this.id = id;
         this.accountIBAN = accountIBAN;
         this.type = type;
-        this.strategy = strategy;
+        this.strategy = StrategyFactory.getCommerciantStrategy(this, strategy);
+    }
+
+    /**
+     * Retrieves the number of transactions made to this commerciant
+     * @param account the account
+     * @return the number of transaction the given account has made to this commerciant
+     */
+    public int getTransactionCount(final Account account) {
+        return transactions.computeIfAbsent(account, k -> 0);
+    }
+
+    /**
+     * Adds a transaction made by the given account to this commerciant
+     * @param account
+     */
+    public void addTransaction(final Account account) {
+        transactions.put(account, getTransactionCount(account) + 1);
     }
 
     /**
@@ -104,7 +126,7 @@ public final class Commerciant {
                 id,
                 account,
                 type,
-                StrategyFactory.getCommerciantStrategy(type, strategy)
+                strategy
         );
     }
 

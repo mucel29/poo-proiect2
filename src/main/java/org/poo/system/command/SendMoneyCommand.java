@@ -5,6 +5,7 @@ import org.poo.io.IOUtils;
 import org.poo.system.BankingSystem;
 import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
+import org.poo.system.commerce.Commerciant;
 import org.poo.system.exceptions.AliasException;
 import org.poo.system.exceptions.BankingException;
 import org.poo.system.exceptions.InputException;
@@ -72,6 +73,16 @@ public class SendMoneyCommand extends Command.Base {
         Account senderAccount = BankingSystem.getStorageProvider().getAccountByIban(sender);
         User senderUser = BankingSystem.getStorageProvider().getUserByEmail(email);
 
+        Amount senderAmount = new Amount(amount, senderAccount.getCurrency());
+
+        // Create the transaction
+        Transaction.Transfer transaction = new Transaction.Transfer(description, timestamp)
+                .setSenderIBAN(senderAccount.getAccountIBAN())
+                .setReceiverIBAN(receiver)
+                .setAmount(amount)
+                .setCurrency(senderAccount.getCurrency())
+                .setTransferType(Transaction.TransferType.SENT);
+
         // Retrieve the receiver account from the storage provider
         Account receiverAccount;
         try {
@@ -79,12 +90,45 @@ public class SendMoneyCommand extends Command.Base {
                     ? BankingSystem.getStorageProvider().getAccountByIban(receiver)
                     : BankingSystem.getStorageProvider().getAccountByAlias(receiver);
         } catch (BankingException e) {
-            // Todo: get a commerciant
-            throw new OwnershipException(
-                    "User not found", // kinda dumb ngl
-                    "Receiver not found: " + receiver,
-                    new CommandDescriptionHandler(this)
-            );
+            try {
+                Commerciant commerciant = BankingSystem
+                        .getStorageProvider()
+                        .getCommerciantByIban(receiver);
+
+                senderAccount.authorizeSpending(senderUser, senderAmount);
+                senderAccount.applyFee(senderAmount);
+                senderAccount.applyCashBack(senderUser, commerciant, senderAmount);
+
+                senderAccount.getTransactions().add(transaction);
+
+                BankingSystem.log(
+                        "Paid "
+                                + amount
+                                + " ("
+                                + senderAmount
+                                + ") to "
+                                + commerciant.getName()
+                                + " [transfer]"
+                );
+
+                return;
+            } catch (UserNotFoundException ex) {
+                throw new OwnershipException(
+                        "User not found", // kinda dumb ngl
+                        "Receiver not found: " + receiver,
+                        new CommandDescriptionHandler(this)
+                );
+            } catch (OperationException oe) {
+                throw new OperationException(
+                        "Insufficient funds",
+                        "Not enough balance: "
+                                + senderAccount.getFunds()
+                                + " (wanted to pay "
+                                + senderAmount
+                                + ")",
+                        new TransactionHandler(senderAccount, timestamp)
+                );
+            }
         }
 
         if (amount <= 0.0) {
@@ -92,7 +136,6 @@ public class SendMoneyCommand extends Command.Base {
             return;
         }
 
-        Amount senderAmount = new Amount(amount, senderAccount.getCurrency());
 
         // Convert the total to be transferred to the receiver
         Amount receiverAmount = senderAmount.to(receiverAccount.getCurrency());
@@ -106,11 +149,14 @@ public class SendMoneyCommand extends Command.Base {
         try {
             BankingSystem.log(
                     "Authorizing sending: " + senderAmount.add(
-                            senderAccount.getOwner().getServicePlan().getFee(senderAmount))
+                            senderAccount.getOwner().getServicePlan().getFee(
+                                    senderAccount,
+                                    senderAmount
+                            ))
 
                     );
             senderAccount.authorizeSpending(senderUser, senderAmount.add(
-                    senderAccount.getOwner().getServicePlan().getFee(senderAmount)
+                    senderAccount.getOwner().getServicePlan().getFee(senderAccount, senderAmount)
             ));
         } catch (OperationException e) {
             throw new OperationException(
@@ -125,14 +171,6 @@ public class SendMoneyCommand extends Command.Base {
                     new TransactionHandler(senderAccount, timestamp)
             );
         }
-
-        // Create the transaction
-        Transaction.Transfer transaction = new Transaction.Transfer(description, timestamp)
-                .setSenderIBAN(senderAccount.getAccountIBAN())
-                .setReceiverIBAN(receiverAccount.getAccountIBAN())
-                .setAmount(amount)
-                .setCurrency(senderAccount.getCurrency())
-                .setTransferType(Transaction.TransferType.SENT);
 
         // Emmit a copy of the transaction
         senderAccount.getTransactions().add(transaction.clone());
@@ -154,8 +192,6 @@ public class SendMoneyCommand extends Command.Base {
                         + senderAccount.getCurrency()
                         + " ("
                         + receiverAmount
-                        + " "
-                        + receiverAccount.getCurrency()
                         + ") to "
                         + receiverAccount.getAccountIBAN()
                         + (Utils.verifyIBAN(receiver)

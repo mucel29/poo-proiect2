@@ -3,6 +3,7 @@ package org.poo.system.command;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.poo.io.IOUtils;
 import org.poo.system.BankingSystem;
+import org.poo.system.Transaction;
 import org.poo.system.command.base.Command;
 import org.poo.system.exceptions.InputException;
 import org.poo.system.exceptions.OperationException;
@@ -106,25 +107,40 @@ public class WithdrawSavingsCommand extends Command.Base {
 
 //        senderAmount = savingsAccount.getOwner().getServicePlan().applyFee(senderAmount);
 
+
+
         try {
             savingsAccount.authorizeSpending(savingsAccount.getOwner(), senderAmount);
-            savingsAccount.applyFee(senderAmount);
+//            savingsAccount.applyFee(senderAmount);
         } catch (OperationException e) {
 //        if (savingsAccount.getFunds().total() < senderAmount.total()) {
             throw new OperationException(
                     "Insufficient funds",
                     null,
-                    new CommandDescriptionHandler(this)
+                    new TransactionHandler(savingsAccount, timestamp)
             );
         }
 
-        savingsAccount.setFunds(savingsAccount.getFunds().sub(senderAmount));
-        targetAccount.setFunds(targetAccount.getFunds().add(amount));
+        Transaction savingsTransaction = new Transaction.SvaingsWithdraw(
+                "Savings withdrawal",
+                timestamp
+        )
+                .setSavingsAccountIBAN(savingsAccount.getAccountIBAN())
+                .setClassicAccountIBAN(targetAccount.getAccountIBAN())
+                .setAmount(amount.total());
 
-        super.output(obj -> obj.put(
-                "description",
-                "Savings withdrawal"
-        ));
+//        savingsAccount.setFunds(savingsAccount.getFunds().sub(senderAmount));
+//        targetAccount.setFunds(targetAccount.getFunds().add(amount));
+
+        targetAccount.authorizeDeposit(targetAccount.getOwner(), amount);
+
+        savingsAccount.getTransactions().add(savingsTransaction);
+        targetAccount.getTransactions().add(savingsTransaction);
+
+//        super.output(obj -> obj.put(
+//                "description",
+//                "Savings withdrawal"
+//        ));
 
 
     }

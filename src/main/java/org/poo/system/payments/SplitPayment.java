@@ -142,16 +142,16 @@ public class SplitPayment implements PendingPayment {
         // Mark the entry as accepted (maybe check if it owns any account first?)
         accepted.add(observer);
 
-        BankingSystem.log(
-                accepted.size()
-                        + " / "
-                        + observers.size()
-                        +
-                        " for ["
-                        + timestamp
-                        + "]\n"
-        );
-        printExpected();
+//        BankingSystem.log(
+//                accepted.size()
+//                        + " / "
+//                        + observers.size()
+//                        +
+//                        " for ["
+//                        + timestamp
+//                        + "]\n"
+//        );
+//        printExpected();
         if (observers.size() == accepted.size()) {
             complete();
         }

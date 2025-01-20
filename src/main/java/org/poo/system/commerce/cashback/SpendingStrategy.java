@@ -39,8 +39,8 @@ public final class SpendingStrategy extends CommerciantStrategy.Base {
 
     }
 
-    public SpendingStrategy(final Commerciant.Type commerciantType) {
-        super(commerciantType);
+    public SpendingStrategy(final Commerciant commerciant) {
+        super(commerciant);
     }
 
     /**
@@ -55,15 +55,13 @@ public final class SpendingStrategy extends CommerciantStrategy.Base {
                 data.getSpending()
                         + amount.to("RON").total()
         );
-        data.setTransactionCount(data.getTransactionCount() + 1);
-
-
+//        data.setTransactionCount(data.getTransactionCount() + 1);
 
         Amount cashback = account.getOwner()
                 .getServicePlan()
                 .getSpendingCashback(
                         amount,
-                        Tier.getTier(data.getSpending())
+                        Tier.getTier(getTotalSpending(account))
                 );
 
         BankingSystem.log(
@@ -72,12 +70,36 @@ public final class SpendingStrategy extends CommerciantStrategy.Base {
 
         BankingSystem.log(
                 "Applying spending cashback of tier "
-                        + Tier.getTier(data.getSpending())
+                        + Tier.getTier(getTotalSpending(account))
                         + " to "
                         + account.getAccountIBAN()
                         + " [" + data.getType() + "]"
                         + " [" + cashback + "]"
         );
+
+        if (
+                account.getDiscounts().containsKey(commerciant.getType())
+                        && account.getDiscounts().get(commerciant.getType())
+        ) {
+
+            account.getDiscounts().remove(commerciant.getType());
+
+            Amount transactionCashback = new Amount(
+                    amount.total()
+                            * commerciant.getType().getTransactionCashback(),
+                    amount.currency()
+            );
+
+            BankingSystem.log(
+                    "Applied transaction cashback to "
+                            + account.getAccountIBAN()
+                            + " ["
+                            + cashback
+                            + "]"
+            );
+
+            cashback = cashback.add(transactionCashback);
+        }
 
         return cashback;
     }

@@ -67,6 +67,11 @@ public class AddAccountCommand extends Command.Base {
         // Register the created account
         BankingSystem.getStorageProvider().registerAccount(newAccount);
 
+        BankingSystem.log(
+                "Created new account: "
+                + newAccount.getAccountIBAN()
+        );
+
         // Add creation transaction to the account
         newAccount.getTransactions().add(new Transaction.Base("New account created", timestamp));
     }

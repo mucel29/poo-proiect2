@@ -53,6 +53,7 @@ public final class BankingSystem {
     }
 
     private static int testNumber = 0;
+    @Getter
     private static int timestamp = 0;
 
     /**
@@ -125,7 +126,7 @@ public final class BankingSystem {
                 if (!e.handle()) {
                     if (VERBOSE_LOGGING) {
                         System.err.println(
-                                "[" + testNumber + "] Unhandled exception: "
+                                "[" + timestamp + "] Unhandled exception: "
                                         + e.getDetailedMessage()
                         );
                     }

@@ -70,6 +70,10 @@ public class CreateCardCommand extends Command.Base {
         // Create a new card
         Card newCard = new Card(targetAccount, targetUser, cardType, Utils.generateCardNumber());
 
+        BankingSystem.log(
+                "Created card: " + newCard.getCardNumber() + " [" + cardType + "] "
+        );
+
         // Generate creation transaction on the target account
         targetAccount.getTransactions().add(
                 new Transaction.CardOperation("New card created", timestamp)

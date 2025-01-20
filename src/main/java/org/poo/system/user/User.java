@@ -155,6 +155,7 @@ public class User implements NodeConvertable, PaymentObserver {
     public List<Transaction> getTransactions() {
         return accounts
                 .stream()
+                .filter(account -> account.owner.equals(this))
                 .flatMap(account -> account.getTransactions().stream())
                 .sorted(Transaction::compareTo)
                 .collect(Collectors.toList());
@@ -199,6 +200,13 @@ public class User implements NodeConvertable, PaymentObserver {
     }
 
     /**
+     * @return the user's names concatenated
+     */
+    public String getUsername() {
+        return lastName + " " + firstName;
+    }
+
+    /**
      * @return the JSON representation of the {@code User}
      */
     @Override
@@ -210,6 +218,12 @@ public class User implements NodeConvertable, PaymentObserver {
 
         ArrayNode accountsNode = root.putArray("accounts");
         for (Account account : accounts) {
+            if (
+                    account.getAccountType() == Account.Type.BUSINESS
+                            && !account.getOwner().equals(this)
+            ) {
+                continue;
+            }
             accountsNode.add(account.toNode());
         }
 

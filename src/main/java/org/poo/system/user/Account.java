@@ -18,7 +18,9 @@ import org.poo.utils.NodeConvertable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 @Getter
@@ -79,6 +81,7 @@ public class Account implements NodeConvertable {
     protected final List<Card> cards = new ArrayList<>();
     protected final List<Transaction> transactions = new ArrayList<>();
     protected final List<CommerciantData> commerciantData = new ArrayList<>();
+    protected final Map<Commerciant.Type, Boolean> discounts = new HashMap<>();
 
     public Account(
             final User owner,
@@ -90,6 +93,11 @@ public class Account implements NodeConvertable {
         this.accountIBAN = accountIBAN;
         this.funds = new Amount(0, currency);
         this.accountType = accountType;
+
+        for (Commerciant.Type type : Commerciant.Type.values()) {
+            discounts.put(type, false);
+        }
+
     }
 
     /**
@@ -164,15 +172,18 @@ public class Account implements NodeConvertable {
      * @param amount the amount to take the fee for
      */
     public void applyFee(final Amount amount) {
-        funds = funds.sub(owner.getServicePlan().getFee(amount));
+        funds = funds.sub(owner.getServicePlan().getFee(this, amount));
     }
 
     /**
      * Applies cashback for a given amount
+     *
+     * @param user the user who made the payment
      * @param commerciant the commerciant that was paid
      * @param amount the amount that was paid
      */
     public void applyCashBack(
+            final User user,
             final Commerciant commerciant,
             final Amount amount
     ) {
@@ -182,6 +193,13 @@ public class Account implements NodeConvertable {
         );
         // 1.3775
         // 1.3195
+        if (cashback.total() > 0.0) {
+            BankingSystem.log(
+                    accountIBAN + "[cashback]: "
+                            + funds + " -> " + funds.add(cashback)
+            );
+        }
+
         funds = funds.add(cashback);
     }
 

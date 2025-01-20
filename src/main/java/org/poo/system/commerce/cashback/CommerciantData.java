@@ -10,6 +10,7 @@ public class CommerciantData {
     private Commerciant.Type type;
     private double spending;
     private int transactionCount;
+    private boolean applied;
 
     public CommerciantData(
             final Commerciant.Type type,
@@ -19,6 +20,7 @@ public class CommerciantData {
         this.type = type;
         this.spending = spending;
         this.transactionCount = transactionCount;
+        applied = false;
     }
 
 

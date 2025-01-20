@@ -69,7 +69,11 @@ public class PayOnlineCommand extends Command.Base {
 
         // Check the ownership
         if (!targetUser.getAccounts().contains(targetAccount)) {
-            throw new OwnershipException("Card " + cardNumber + " is not owned by " + email);
+            throw new OwnershipException(
+                    "Card not found",
+                    "Card " + cardNumber + " is not owned by " + email,
+                    new CommandDescriptionHandler(this)
+            );
         }
 
         // Check if the card is frozen
@@ -98,13 +102,24 @@ public class PayOnlineCommand extends Command.Base {
 
 //        if (targetAccount.getFunds().total() < processedAmount.total()) {
         try {
+            targetAccount.authorizeSpending(targetUser, originalAmount);
+
+            // Emmit payment transaction
+            targetAccount.getTransactions().add(
+                    new Transaction.Payment("Card payment", timestamp)
+                            .setCommerciant(commerciantName)
+                            .setAmount(originalAmount.total())
+            );
+
+            targetAccount.applyFee(originalAmount);
+            targetAccount.applyCashBack(targetUser, commerciant, originalAmount);
             BankingSystem.log(
                     "paid: " + originalAmount.to("RON")
             );
-            targetAccount.authorizeSpending(targetUser, originalAmount);
-            targetAccount.applyFee(originalAmount);
-            targetAccount.applyCashBack(commerciant, originalAmount);
         } catch (OperationException e) {
+            BankingSystem.log(
+                    "Insufficient funds or unauthorized"
+            );
             throw new OperationException(
                     "Insufficient funds",
                     "Not enough balance: "
@@ -127,13 +142,7 @@ public class PayOnlineCommand extends Command.Base {
                         + originalAmount
                         + ") to "
                         + commerciantName
-        );
-
-        // Emmit payment transaction
-        targetAccount.getTransactions().add(
-                new Transaction.Payment("Card payment", timestamp)
-                        .setCommerciant(commerciantName)
-                        .setAmount(originalAmount.total())
+                        + " [online]"
         );
 
 
@@ -144,7 +153,8 @@ public class PayOnlineCommand extends Command.Base {
                     targetCard.getCardNumber(),
                     // change to account owner
                     targetAccount.getOwner().getEmail(),
-                    timestamp
+                    timestamp,
+                    true
             ).execute();
             new CreateCardCommand(
                     Card.Type.ONE_TIME,

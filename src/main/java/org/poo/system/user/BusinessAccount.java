@@ -3,6 +3,8 @@ package org.poo.system.user;
 import lombok.Getter;
 import lombok.Setter;
 import org.poo.system.BankingSystem;
+import org.poo.system.commerce.Commerciant;
+import org.poo.system.commerce.CommerciantSpending;
 import org.poo.system.exceptions.InputException;
 import org.poo.system.exceptions.OperationException;
 import org.poo.system.exceptions.OwnershipException;
@@ -48,6 +50,7 @@ public class BusinessAccount extends Account {
     private static final Amount INITIAL_LIMIT = new Amount(500, "RON");
 
     private final List<AssociateData> associateDataList = new ArrayList<>();
+    private final List<CommerciantSpending> commerciantSpendingList = new ArrayList<>();
 
     public BusinessAccount(
             final User owner,
@@ -86,6 +89,16 @@ public class BusinessAccount extends Account {
                     new Amount(0, funds.currency())
             ));
             associate.getAccounts().add(this);
+
+            BankingSystem.log(
+                    "Added "
+                            + associate.getUsername()
+                            + " as "
+                            + role
+                            + " to "
+                            + accountIBAN
+            );
+
         }
 
 
@@ -94,6 +107,8 @@ public class BusinessAccount extends Account {
                         + associate.getEmail()
                         + " already has a role"
         );
+
+
 
     }
 
@@ -133,8 +148,18 @@ public class BusinessAccount extends Account {
                 deposited
         );
 
+        BankingSystem.log(
+                "Updated deposit for "
+                        + associate.getUsername()
+                        + ": "
+                        + data.deposited()
+                        + " -> "
+                        + deposited
+        );
+
+        int oldIndex = associateDataList.indexOf(data);
         associateDataList.remove(data);
-        associateDataList.add(newData);
+        associateDataList.add(oldIndex, newData);
     }
 
     private void updateSpending(
@@ -152,15 +177,16 @@ public class BusinessAccount extends Account {
 
         BankingSystem.log(
                 "Updated spending for "
-                + associate.getEmail()
-                + " from "
-                + data.spent()
-                + " to "
-                + newData.spent()
+                        + associate.getUsername()
+                        + ": "
+                        + data.spent()
+                        + " -> "
+                        + spending
         );
 
+        int oldIndex = associateDataList.indexOf(data);
         associateDataList.remove(data);
-        associateDataList.add(newData);
+        associateDataList.add(oldIndex, newData);
     }
 
     /**
@@ -223,9 +249,15 @@ public class BusinessAccount extends Account {
 
         Amount newDeposited = associateData.deposited().add(amount);
 
+//        BankingSystem.log(
+//                user.getUsername()
+//                + " is trying to deposit "
+//                + n
+//        );
+
         if (
                 associateData.role() != Role.MANAGER
-                        && newDeposited.sub(depositLimit).total() > 0.0
+                        && amount.sub(depositLimit).total() > 0.0
         ) {
             throw new OperationException("You are not authorized to make this transaction.");
         }
@@ -257,13 +289,67 @@ public class BusinessAccount extends Account {
 
         if (
                 associateData.role() != Role.MANAGER
-                        && newSpending.sub(depositLimit).total() > 0.0
+                        && amount.sub(spendingLimit).total() > 0.0
         ) {
             throw new OperationException("You are not authorized to make this transaction.");
         }
 
         super.authorizeSpending(user, amount);
         updateSpending(user, newSpending);
+
+    }
+
+    private CommerciantSpending getCommerciantSpending(final String commerciantName) {
+        Optional<CommerciantSpending> oSpending = commerciantSpendingList.stream().filter(
+                cs -> cs.getName().equals(commerciantName)
+        ).findFirst();
+
+        CommerciantSpending spending = oSpending.orElse(null);
+
+        if (spending == null) {
+            spending = new CommerciantSpending(commerciantName, getCurrency());
+            commerciantSpendingList.add(spending);
+        }
+
+        return spending;
+    }
+
+    /**
+     * Applies cashback for a given amount
+     *
+     * @param user the user who made the payment
+     * @param commerciant the commerciant that was paid
+     * @param amount      the amount that was paid
+     */
+    @Override
+    public void applyCashBack(
+            final User user,
+            final Commerciant commerciant,
+            final Amount amount
+    ) {
+        super.applyCashBack(user, commerciant, amount);
+
+        if (owner.equals(user)) {
+            return;
+        }
+
+        CommerciantSpending commerciantSpending = getCommerciantSpending(commerciant.getName());
+
+        commerciantSpending.setReceived(commerciantSpending.getReceived().add(amount));
+
+
+        AssociateData associateData = getAssociateData(user);
+        switch (associateData.role()) {
+            case EMPLOYEE -> commerciantSpending.getEmployees().add(
+                    associateData.associate().getUsername()
+            );
+            case MANAGER -> commerciantSpending.getManagers().add(
+                    associateData.associate().getUsername()
+            );
+            default -> {
+
+            }
+        }
 
     }
 }

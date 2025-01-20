@@ -8,17 +8,17 @@ public final class StrategyFactory {
 
     /**
      * Creates a new {@code CommerciantStrategy}
-     * @param commerciantType
+     * @param commerciant
      * @param strategyType
      * @return the requested strategy
      */
     public static CommerciantStrategy getCommerciantStrategy(
-            final Commerciant.Type commerciantType,
+            final Commerciant commerciant,
             final CommerciantStrategy.Type strategyType
     ) {
         return switch (strategyType) {
-            case SPENDING -> new SpendingStrategy(commerciantType);
-            case TRANSACTIONS -> new TransactionStrategy(commerciantType);
+            case SPENDING -> new SpendingStrategy(commerciant);
+            case TRANSACTIONS -> new TransactionStrategy(commerciant);
         };
     }
 

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.poo.io.IOUtils;
 import org.poo.system.BankingSystem;
 import org.poo.system.command.base.Command;
+import org.poo.system.commerce.CommerciantSpending;
 import org.poo.system.exceptions.InputException;
 import org.poo.system.exceptions.OperationException;
 import org.poo.system.exceptions.OwnershipException;
@@ -16,6 +17,7 @@ import org.poo.system.user.BusinessAccount;
 import org.poo.system.user.User;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.NoSuchElementException;
 
 public final class BusinessReportCommand extends Command.Base {
@@ -78,19 +80,47 @@ public final class BusinessReportCommand extends Command.Base {
         User user1 = data1.associate();
         User user2 = data2.associate();
 
-        int depositCompare = Double.compare(
-                data2.deposited().total(),
-                data1.deposited().total()
-        );
+//        Amount net1 = data1.deposited().sub(data1.spent());
+//        Amount net2 = data2.deposited().sub(data2.spent());
+//
+//        if (net1.total() == 0.0)
+//            return 1;
+//
+//        if (net2.total() == 0.0)
+//            return -1;
+//
+//        return Double.compare(
+//                net2.total(),
+//                net1.total()
+//        );
 
-        if (depositCompare != 0) {
-            return depositCompare;
+//        int depositCompare = Double.compare(
+//                data2.deposited().total(),
+//                data1.deposited().total()
+//        );
+//
+//        if (depositCompare != 0) {
+//            return depositCompare;
+//        }
+
+        if (
+                data1.spent().total() == 0.0
+                        && data2.spent().total() != 0.0
+        ) {
+            return 1;
+        } else if (
+                data1.spent().total() != 0.0
+                        && data2.spent().total() == 0.0
+        ) {
+            return -1;
         }
 
-        String username1 = user1.getLastName() + " " + user1.getFirstName();
-        String username2 = user2.getLastName() + " " + user2.getFirstName();
+        return Double.compare(
+                data1.spent().total(),
+                data2.spent().total()
+        );
 
-        return username1.compareTo(username2);
+//        return spentCompare;
     }
 
     @Override
@@ -125,29 +155,39 @@ public final class BusinessReportCommand extends Command.Base {
             root.put("deposit limit", bAccount.getDepositLimit().total());
             root.put("statistics type", type.toString());
 
-            ArrayNode managerArray = root.putArray("managers");
-            ArrayNode employeeArray = root.putArray("employees");
+            if (type == Type.TRANSACTION) {
+                ArrayNode managerArray = root.putArray("managers");
+                ArrayNode employeeArray = root.putArray("employees");
 
-            // Compute total
-            double totalSpent = 0.0;
-            double totalDeposited = 0.0;
+                // Compute total
+                double totalSpent = 0.0;
+                double totalDeposited = 0.0;
 
-            bAccount.getAssociateDataList().sort(this::compareData);
+//                bAccount.getAssociateDataList().sort(this::compareData);
 
-            for (AssociateData aData : bAccount.getAssociateDataList()) {
-                switch (aData.role()) {
-                    case MANAGER -> managerArray.add(aData.toNode());
-                    case EMPLOYEE -> employeeArray.add(aData.toNode());
-                    default -> {
+                for (AssociateData aData : bAccount.getAssociateDataList()) {
+                    switch (aData.role()) {
+                        case MANAGER -> managerArray.add(aData.toNode());
+                        case EMPLOYEE -> employeeArray.add(aData.toNode());
+                        default -> {
+                        }
                     }
+                    totalSpent += aData.spent().total();
+                    totalDeposited += aData.deposited().total();
+
                 }
-                totalSpent += aData.spent().total();
-                totalDeposited += aData.deposited().total();
 
+                root.put("total spent", totalSpent);
+                root.put("total deposited", totalDeposited);
+            } else {
+                ArrayNode commerciantsArray = root.putArray("commerciants");
+                bAccount.getCommerciantSpendingList().sort(
+                        Comparator.comparing(CommerciantSpending::getName)
+                );
+                for (CommerciantSpending spending : bAccount.getCommerciantSpendingList()) {
+                    commerciantsArray.add(spending.toNode());
+                }
             }
-
-            root.put("total spent", totalSpent);
-            root.put("total deposited", totalDeposited);
 
         });
 

@@ -306,5 +306,20 @@ public interface Transaction extends NodeConvertable, Cloneable, Comparable<Tran
         }
     }
 
+    @Setter @Accessors(chain = true)
+    class SvaingsWithdraw extends Base {
+        private double amount;
+        private String classicAccountIBAN;
+        private String savingsAccountIBAN;
+
+        public SvaingsWithdraw(
+                final String description,
+                final int timestamp
+        ) {
+            super(description, timestamp);
+        }
+
+    }
+
 }
 
