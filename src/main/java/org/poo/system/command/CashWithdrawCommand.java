@@ -64,7 +64,20 @@ public class CashWithdrawCommand extends Command.Base {
 
         // Check if the user and owner are the same???
 
+
         Account targetAccount = targetCard.getAccount();
+
+
+        if (!targetAccount.isAuthorized(targetUser)) {
+            throw new OwnershipException(
+                    "Card not found",
+                    targetUser
+                        + " doesn't have access to card "
+                        + cardNumber,
+                    new CommandDescriptionHandler(this)
+            );
+        }
+
 
         if (!targetCard.isActive()) {
             throw new OperationException(
